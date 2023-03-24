@@ -46,6 +46,20 @@ app.get('/getUserData', async function (req,res){
       }).catch(err =>console.log(err))
 })
 
+app.get('/getUserRepo', async function (req,res){
+  await axios.get('https://api.github.com/user/repos', {
+      headers:{
+          "Authorization": 'Bearer ' + req.get("Authorization").slice(6,)
+      }
+   })
+   .then((response) => {
+    console.log(response.data)
+      res.json({
+        RepoData: response.data
+      })
+    }).catch(err =>console.log(err))
+})
+
 app.listen(4000, () => {
     console.log('CROS server running')
 })
