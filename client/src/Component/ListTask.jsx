@@ -1,8 +1,6 @@
 import React,{useEffect, useState} from 'react'
 import axios from 'axios';
-import Button from 'react-bootstrap/Button';
-import Modal from 'react-bootstrap/Modal';
-import Form from 'react-bootstrap/Form';
+import AddTask from './AddTask';
 
 function ListTask() {
     const [rerender, setRerender] = useState(false)
@@ -61,31 +59,19 @@ function ListTask() {
 
     },[])
 
-async function getUserData() {
-    await axios.get("http://localhost:4000/getUserData", {
-        headers:{
-            "Authorization": "Bearer"+ localStorage.getItem("access_token")
-            }
-        })
-        .then(data =>{
-            console.log(data.data);
-            setUserData(data.data.UserData)
-        }
-        ).catch(err => console.log(err))
-}
 
-// async function getUserRepo() {
-//     await axios.get("http://localhost:4000/getUserRepo", {
-//         headers:{
-//             "Authorization": "Bearer"+ localStorage.getItem("access_token")
-//             }
-//         })
-//         .then(data =>{
-//             console.log(data.data.RepoData);
-//             setUserRepo(data.data.RepoData)
-//         }
-//         ).catch(err => console.log(err))
-// }
+    
+async function getUserData(req, res) {
+    await axios.get('https://api.github.com/user', {
+        headers:{
+            "Authorization": 'Bearer ' + localStorage.getItem("access_token")
+        }
+     })
+     .then((data) => {
+        console.log(data)
+        setUserData(data.data)
+      }).catch(err =>console.log(err))
+ }
 
 async function postData(req, res) {
     const data = {
@@ -184,13 +170,13 @@ async function searchData(req, res) {
                 <img width="100px" height="100px" src={userData.avatar_url} />
               </a>
 
-               {/* <button onClick={getIssues}>Get Issue</button> */}
               {userIssues.length !== 0 && userIssues.map(a => {return(
                 <>
                     <h4>{a.title}</h4>
                     <p>{a.body}</p>
                 </>
               )})}
+              <AddTask />
             </>
             :
             <></>    
@@ -202,64 +188,7 @@ async function searchData(req, res) {
         <a href='/login'> Login</a>
         </>
     }
-    <Button variant="primary" onClick={() => setModalShow(true)}>
-       Add
-    </Button>
-    
-    <Modal
-      size="lg"
-      aria-labelledby="contained-modal-title-vcenter"
-      centered
-      show={modalShow}
-    >
-      <Modal.Header closeButton>
-        <Modal.Title id="contained-modal-title-vcenter">
-          Add an issue
-        </Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <h4>Select repo ...</h4>
-        <Form>
-            <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
-            <Form.Label>repo</Form.Label>
-            {/* <Select
-                className="basic-single"
-                classNamePrefix="select"
-                defaultValue={center[0]}
-                onChange={e => setCode(e.value)}
-                options={center}
-            />
 
-            <div
-                style={{
-                color: 'hsl(0, 0%, 40%)',
-                display: 'inline-block',
-                fontSize: 12,
-                fontStyle: 'italic',
-                marginTop: '1em',
-                }}
-            ></div> */}
-            </Form.Group>
-            <Form.Group className="mb-3">
-            <Form.Label>Title</Form.Label>
-                <Form.Control type="text" value={title} onChange={e => setTitle(e.target.value)}/>
-            </Form.Group>
-            <Form.Group className="mb-3">
-            <Form.Label>Body</Form.Label>
-                <Form.Control as="textarea" rows={3} value={content} onChange={e => setContent(e.target.value)}/>
-                {/* 限定至少30字 */}
-            </Form.Group>
-        </Form>
-      </Modal.Body>
-      <Modal.Footer>
-            <Button variant="secondary" onClick={() => setModalShow(false)}>
-                 取消
-            </Button>
-            <Button variant="primary" onClick={e =>postData(e)}>
-                 確定
-            </Button>
-      </Modal.Footer>
-    </Modal>
     </div>
   )
 }
