@@ -11,10 +11,10 @@ function AddTask() {
     const [content, setContent] = useState('')
     const [selectRepo, setSelectRepo] = useState()
     const [allRepo, setAllRepo]= useState([])
-    
+
+    const handleClose = () => setModalShow(false);
 
     useEffect(()=>{
-        
         if(modalShow){
             async function getUserRepo() {
                 await axios.get("https://api.github.com/user/repos", {
@@ -23,15 +23,12 @@ function AddTask() {
                         }
                     })
                     .then(data =>{
-                        console.log(data.data);
                         const newArr = data.data.map((item) => ({ value: item.name, label: item.name }));
-                        console.log(newArr)
                         setAllRepo(newArr)
                     }
                     ).catch(err => console.log(err))
             }
             getUserRepo()
-            console.log('hihi')
         }
     },[modalShow])
 
@@ -50,13 +47,14 @@ function AddTask() {
                         }
                 }).then(data =>console.log(data))
                 .catch(err => console.log(err))
-                setModalShow(false)
+                handleClose()
                 alert('新增成功')
             }
         }else{
             alert('請輸入標題')
         }
     }
+
   return (
     <div>
     <Button variant="primary" onClick={() => setModalShow(true)}>
@@ -67,6 +65,7 @@ function AddTask() {
       size="lg"
       aria-labelledby="contained-modal-title-vcenter"
       centered
+      onHide={handleClose}
       show={modalShow}
     >
       <Modal.Header closeButton>
@@ -108,7 +107,7 @@ function AddTask() {
         </Form>
       </Modal.Body>
       <Modal.Footer>
-            <Button variant="secondary" onClick={() => setModalShow(false)}>
+            <Button variant="secondary" onClick={handleClose}>
                  取消
             </Button>
             <Button variant="primary" onClick={e =>postData(e)}>

@@ -1,39 +1,25 @@
-import React,{useEffect, useState} from 'react'
+import React,{useEffect, useState, useContext} from 'react'
+import { Context } from "../Context/Context";
 import axios from 'axios';
 import AddTask from './AddTask';
+import { useNavigate } from "react-router-dom";
 
 function ListTask() {
     const [rerender, setRerender] = useState(false)
     const [userData, setUserData] = useState({})
     const [userIssues, setUserIssues] = useState([])
-    const [userRepo, setUserRepo] = useState([])
-    const [repo, setRepo] = useState()
-    
-    const [title, setTitle] = useState()
-    const [modalShow, setModalShow] = useState(false)
-    const [content, setContent] = useState()
+    const {issueUrl, setIssueUrl} = useContext(Context)
+    const history = useNavigate()
+    // const [repo, setRepo] = useState()
 
-    useEffect(()=>{
-        // const getList = async()=>{
-        //     await axios.get("https://api.github.com/repos/eating31/"+repo+"/issues")
-        //     .then(data =>{
-        //         console.log(data.data)
-        //         setUserIssues(data.data)
-        //     })
-        // }
-        if(repo){   
-           //  getList()
-            
-        }
-    },[repo])
 
-    const getSingleRepoIssues = async()=>{
-        await axios.get("https://api.github.com/repos/eating31/"+repo+"/issues")
-        .then(data =>{
-            console.log(data.data)
-            setUserIssues(data.data)
-        })
-    }
+    // const getSingleRepoIssues = async()=>{
+    //     await axios.get("https://api.github.com/repos/eating31/"+repo+"/issues")
+    //     .then(data =>{
+    //         console.log(data.data)
+    //         setUserIssues(data.data)
+    //     })
+    // }
 
     useEffect(()=>{
         const querytring = window.location.search;
@@ -54,13 +40,10 @@ function ListTask() {
             }
           getAccessToken()
          // 底下位置要動 不然他已經做好了但還沒顯示
-          searchData()
         }
 
     },[])
-
-
-    
+ 
 async function getUserData(req, res) {
     await axios.get('https://api.github.com/user', {
         headers:{
@@ -72,22 +55,6 @@ async function getUserData(req, res) {
         setUserData(data.data)
       }).catch(err =>console.log(err))
  }
-
-async function postData(req, res) {
-    const data = {
-        "title":title,
-        "body":content 
-    }
-    if(title){   
-        const a = await axios.post("https://api.github.com/repos/eating31/"+repo+"/issues", data,{
-            headers:{
-                "Authorization": "bearer " + process.env.REACT_APP_GITHUB_TOKEN
-                }
-        }).then(data =>console.log(data))
-        .catch(err => console.log(err))
-        console.log(a)
-    }
-}
 
 // async function getIssues(req, res) {
 //     const query = `{ 
@@ -140,6 +107,12 @@ async function postData(req, res) {
 //     console.log(a)
 // }
 
+function Detail(e, url) {
+    e.preventDefault();
+    setIssueUrl(url);
+    history('/detail')
+
+}
 
 async function searchData(req, res) {
     // 所有資料
@@ -161,7 +134,8 @@ async function searchData(req, res) {
         <h1>Success!</h1>
         <button onClick={()=>{ localStorage.removeItem("access_token"); setRerender(!rerender) }}> Log out</button>
         <h3>Get User Data</h3>
-        <button onClick={getUserData}>Get Data</button>
+        <button onClick={searchData}>Get Data</button>
+        <button onClick={getUserData}>Get User</button>
             {Object.keys(userData).length !== 0 ?
             <>
               <h4>Hi there {userData.login}</h4>
@@ -172,8 +146,12 @@ async function searchData(req, res) {
 
               {userIssues.length !== 0 && userIssues.map(a => {return(
                 <>
-                    <h4>{a.title}</h4>
-                    <p>{a.body}</p>
+                <a href='/' onClick={e=>Detail(e, a.url)}>
+                    <div>
+                        <h4>{a.title}</h4>
+                        <p>{a.body}</p>
+                    </div>
+                </a>
                 </>
               )})}
               <AddTask />

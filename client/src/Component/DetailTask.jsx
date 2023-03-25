@@ -1,5 +1,6 @@
-import React,{useEffect, useState} from 'react'
+import React,{useEffect, useState, useContext} from 'react'
 import axios from 'axios';
+import { Context } from "../Context/Context";
 import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
 import Dropdown from 'react-bootstrap/Dropdown';
@@ -16,7 +17,28 @@ function DetailTask() {
   const [repo, setRepo] = useState()
   const [userRepo, setUserRepo] = useState([])
   const [status, setStatus] = useState()
+  
 
+  const [issues, setIssues] = useState([])
+
+  const {issueUrl, setIssueUrl} = useContext(Context)
+
+
+
+useEffect(()=>{
+console.log(issueUrl)
+},[issueUrl])
+
+useEffect(()=>{
+  async function getIssue(){
+    await axios.get(issueUrl)
+    .then(data=>{
+      console.log(data.data)
+      setIssues(data.data)
+    }).catch(err => console.log(err))
+  }
+  getIssue()
+},[])
 
   async function updateData(req, res) {
     const data = {
@@ -24,21 +46,19 @@ function DetailTask() {
         "body":content 
     }
     console.log(data)
-    const a = await axios.patch("https://api.github.com/repos/eating31/"+repo+"/issues/2", data, {
-        headers:{
+      await axios.patch(issueUrl, data, {
+      headers:{
             "Authorization": "bearer " + process.env.REACT_APP_GITHUB_TOKEN
             }
     }).then(data =>console.log(data))
     .catch(err => console.log(err))
-    console.log(a)
 }
 
-async function deleteData(req, res) {
+async function deleteData() {
     const data = {
         "state":"closed",
     }
-    console.log(data)
-    const a = await axios.patch("https://api.github.com/repos/eating31/"+repo+"/issues/1", data, {
+    const a = await axios.patch(issueUrl, data, {
         headers:{
             "Authorization": "bearer " + process.env.REACT_APP_GITHUB_TOKEN
             }
@@ -58,7 +78,7 @@ async function deleteData(req, res) {
                 id="issue_id"
                 drop="end"
                 variant="white"
-                title="open"
+                title={issues.state}
                 onToggle={false}
               >
               <Dropdown.Item eventKey="1" onClick={e => setStatus(1)} className='text-secondary'><FontAwesomeIcon icon={faSquare} size="2xs" /> open</Dropdown.Item>
@@ -71,14 +91,14 @@ async function deleteData(req, res) {
               variant="white"
               title="&#8942;">
               <Dropdown.Item onClick={e => setIsEdit(true)} className="text-secondary"><FontAwesomeIcon icon={faPenToSquare} size="xs" /> Edit</Dropdown.Item>
-              <Dropdown.Item onClick={e => deleteData} className="text-danger"><FontAwesomeIcon icon={faTrash} size="xs" /> Delete</Dropdown.Item>
+              <Dropdown.Item onClick={e => deleteData(e)} className="text-danger"><FontAwesomeIcon icon={faTrash} size="xs" /> Delete</Dropdown.Item>
             </DropdownButton>
           </Card.Title>
           <Card.Title>
-            Title : ...
+            Title : {issues.title}
           </Card.Title>
           <Card.Text>
-            body : ...
+            body : {issues.body}
           </Card.Text>
           {isEdit && <Button variant="primary" onClick={e => updateData}>確定</Button>}
         </Card.Body>
