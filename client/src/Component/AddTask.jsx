@@ -35,7 +35,13 @@ function AddTask() {
     async function postData(req, res) {
         const data = {
             "title":title,
-            "body":content 
+            "body":content, 
+            "labels": [
+                {
+                  "name": "open",
+                  "color": "6c757d"
+                }
+              ]
         }
         if(title){   
             if(content.length <= 30){
@@ -84,16 +90,6 @@ function AddTask() {
                 onChange={e => setSelectRepo(e.value)}
                 options={allRepo}
             />
-
-            <div
-                style={{
-                color: 'hsl(0, 0%, 40%)',
-                display: 'inline-block',
-                fontSize: 12,
-                fontStyle: 'italic',
-                marginTop: '1em',
-                }}
-            ></div>
             </Form.Group>
             <Form.Group className="mb-3">
             <Form.Label>Title</Form.Label>
@@ -102,7 +98,9 @@ function AddTask() {
             <Form.Group className="mb-3">
             <Form.Label>Body</Form.Label>
                 <Form.Control as="textarea" rows={3} value={content} onChange={e => setContent(e.target.value)}/>
-                {/* 限定至少30字 */}
+                <Form.Text id="passwordHelpBlock" muted>
+                    至少輸入30個字
+                </Form.Text>
             </Form.Group>
         </Form>
       </Modal.Body>

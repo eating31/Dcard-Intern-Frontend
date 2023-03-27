@@ -6,8 +6,9 @@ import Card from 'react-bootstrap/Card';
 import Dropdown from 'react-bootstrap/Dropdown';
 import DropdownButton from 'react-bootstrap/DropdownButton';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPenToSquare, faTrash,faSquare } from '@fortawesome/free-solid-svg-icons'
-//import { faTrash } from '@fortawesome/free-regular-svg-icons'
+import { faPenToSquare, faTrash,faSquare, faEllipsisVertical } from '@fortawesome/free-solid-svg-icons'
+import { useNavigate } from "react-router-dom";
+
 
 
 function DetailTask() {
@@ -23,20 +24,54 @@ function DetailTask() {
 
   const {issueUrl, setIssueUrl} = useContext(Context)
 
+  const navigate = useNavigate()
 
 
 useEffect(()=>{
-console.log(issueUrl)
-},[issueUrl])
+  console.log(status)
+async function updateState(){
+  let s = status
+  const LabelUrl =issueUrl.labels[0].url
+  console.log(LabelUrl)
+  let color = '';
+  if(status === 'open'){
+    color = '6c757d'
+  }else if(status === 'In%20progress'){
+    color = 'dc3545'
+    s = 'In progress'
+  }else{
+    color='198754'
+  }
+  const data ={
+    name: s,
+    color: color,
+  }
 
-useEffect(()=>{
-  async function getIssue(){
-    await axios.get(issueUrl)
+  await axios.patch(LabelUrl, data ,{
+    headers:{
+          "Authorization": "bearer " + process.env.REACT_APP_GITHUB_TOKEN
+    }}).then(data => console.log(data))
+    .catch(err => console.log(err))
+
+    getIssue()
+  }
+  if(status){
+    updateState()
+  }
+  
+
+},[status])
+
+async function getIssue(){
+  await axios.get(issueUrl.url)
     .then(data=>{
       console.log(data.data)
       setIssues(data.data)
     }).catch(err => console.log(err))
-  }
+  setIssueUrl(issueUrl);
+}
+
+useEffect(()=>{
   getIssue()
 },[])
 
@@ -46,7 +81,7 @@ useEffect(()=>{
         "body":content 
     }
     console.log(data)
-      await axios.patch(issueUrl, data, {
+      await axios.patch(issueUrl.url, data, {
       headers:{
             "Authorization": "bearer " + process.env.REACT_APP_GITHUB_TOKEN
             }
@@ -58,7 +93,7 @@ async function deleteData() {
     const data = {
         "state":"closed",
     }
-    const a = await axios.patch(issueUrl, data, {
+    const a = await axios.patch(issueUrl.url, data, {
         headers:{
             "Authorization": "bearer " + process.env.REACT_APP_GITHUB_TOKEN
             }
@@ -67,6 +102,9 @@ async function deleteData() {
     console.log(a)
 }
 
+const icon = () => {
+  return <FontAwesomeIcon icon={faEllipsisVertical} />
+}
 
   return (
     <div className='container'> 
@@ -78,18 +116,19 @@ async function deleteData() {
                 id="issue_id"
                 drop="end"
                 variant="white"
-                title={issues.state}
-                onToggle={false}
+                // title={issueUrl.labels[0].name}
+                title="open"
               >
-              <Dropdown.Item eventKey="1" onClick={e => setStatus(1)} className='text-secondary'><FontAwesomeIcon icon={faSquare} size="2xs" /> open</Dropdown.Item>
-              <Dropdown.Item eventKey="2" onClick={e => setStatus(2)} className='text-danger'> <FontAwesomeIcon icon={faSquare} size="2xs" /> In progress</Dropdown.Item>
-              <Dropdown.Item eventKey="3" className='text-success'><FontAwesomeIcon icon={faSquare} size="2xs" /> Done</Dropdown.Item>
+
+              <Dropdown.Item eventKey="1" onClick={e => setStatus('open')} className='text-secondary'><FontAwesomeIcon icon={faSquare} size="2xs" /> open</Dropdown.Item>
+              <Dropdown.Item eventKey="2" onClick={e => setStatus('In%20progress')} className='text-danger'> <FontAwesomeIcon icon={faSquare} size="2xs" /> In progress</Dropdown.Item>
+              <Dropdown.Item eventKey="3" onClick={e => setStatus('Done')} className='text-success'><FontAwesomeIcon icon={faSquare} size="2xs" /> Done</Dropdown.Item>
             </DropdownButton>
             <DropdownButton 
               className="col d-flex justify-content-end" 
               id="dropdown-basic-button" 
               variant="white"
-              title="&#8942;">
+              title={icon()}>
               <Dropdown.Item onClick={e => setIsEdit(true)} className="text-secondary"><FontAwesomeIcon icon={faPenToSquare} size="xs" /> Edit</Dropdown.Item>
               <Dropdown.Item onClick={e => deleteData(e)} className="text-danger"><FontAwesomeIcon icon={faTrash} size="xs" /> Delete</Dropdown.Item>
             </DropdownButton>
@@ -103,6 +142,11 @@ async function deleteData() {
           {isEdit && <Button variant="primary" onClick={e => updateData}>確定</Button>}
         </Card.Body>
       </Card>
+
+      {issueUrl && issueUrl.labels.map(each => {return(
+        <p>{each.name}</p>
+      )})}
+      {/* <button onClick={}>list label</button> */}
     </div>
   )
 }

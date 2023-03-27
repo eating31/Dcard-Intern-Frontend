@@ -8,7 +8,7 @@ export const ContextProvider = (props) =>{
 
 
     return (
-        <Context.Provider value={{issueUrl, setIssueUrl }}>
+        <Context.Provider value={{issueUrl, setIssueUrl}}>
             {props.children}
         </Context.Provider>
     )
