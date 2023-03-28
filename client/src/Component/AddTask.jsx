@@ -4,6 +4,8 @@ import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 import Form from 'react-bootstrap/Form';
 import Select from 'react-select';
+import Spinner from 'react-bootstrap/Spinner';
+
 
 function AddTask() {
     const [modalShow, setModalShow] = useState(false)
@@ -11,8 +13,13 @@ function AddTask() {
     const [content, setContent] = useState('')
     const [selectRepo, setSelectRepo] = useState()
     const [allRepo, setAllRepo]= useState([])
+    const [loading, setLoading] = useState(false)
+    const [finishModal, setFinishModal] = useState(false)
 
-    const handleClose = () => setModalShow(false);
+    const handleClose = () => {
+        setModalShow(false)
+        setFinishModal(false);
+    };
 
     useEffect(()=>{
         if(modalShow){
@@ -47,14 +54,17 @@ function AddTask() {
             if(content.length <= 30){
                 alert('請輸入超過30字')
             }else{
+                setLoading(true)
                 await axios.post("https://api.github.com/repos/eating31/"+selectRepo+"/issues", data,{
                     headers:{
-                        "Authorization": "bearer " + process.env.REACT_APP_GITHUB_TOKEN
+                        "Authorization": "bearer " + localStorage.getItem("access_token")
                         }
                 }).then(data =>console.log(data))
                 .catch(err => console.log(err))
                 handleClose()
-                alert('新增成功')
+                setLoading(false)
+                setFinishModal(true)
+                // alert('新增成功')
             }
         }else{
             alert('請輸入標題')
@@ -106,13 +116,34 @@ function AddTask() {
       </Modal.Body>
       <Modal.Footer>
             <Button variant="secondary" onClick={handleClose}>
-                 取消
+                取消
             </Button>
-            <Button variant="primary" onClick={e =>postData(e)}>
-                 確定
+            <Button variant="primary" onClick={e =>postData(e)} disabled={loading}>
+                {loading &&
+                <Spinner
+                    as="span"
+                    animation="border"
+                    size="sm"
+                    role="status"
+                    aria-hidden="true"
+                    />
+                }
+                {"  "}確定
             </Button>
       </Modal.Footer>
     </Modal>
+
+    <Modal show={finishModal} onHide={handleClose} animation={false} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Create an issue</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>Successfully created an issue</Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" onClick={handleClose}>
+            確定
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   )
 }

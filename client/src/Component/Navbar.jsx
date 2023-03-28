@@ -2,11 +2,12 @@ import React, { useState, useEffect, useContext } from 'react'
 import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import NavbarReact from 'react-bootstrap/Navbar';
+import { Context } from "../Context/Context";
 
 function Navbar() {
 
   const [isLoggedIn, setIsLoggedIn] = useState();
-  const [userName, setUserName] = useState('');
+  const {userName, setUserName} = useContext(Context)
 
   const url = 'https://github.com/login/oauth/authorize?client_id=7e2ec405ab8a9a9c9528'
 console.log(process.env.REACT_APP_CLIENT_ID)
@@ -26,9 +27,9 @@ useEffect(()=>{
 },[])
 
   function handleSelect(eventKey){
-    if(eventKey === '4'){
+    if(eventKey === '3'){
       setIsLoggedIn(true)
-      window.location.assign('https://github.com/login/oauth/authorize?client_id=7e2ec405ab8a9a9c9528')
+      // window.location.assign('https://github.com/login/oauth/authorize?client_id=7e2ec405ab8a9a9c9528')
     }else{
       setIsLoggedIn(false)
       localStorage.removeItem("access_token")
@@ -55,9 +56,12 @@ useEffect(()=>{
       <NavbarReact.Collapse id="basic-navbar-nav">
         <Nav className="me-auto" onSelect={handleSelect}>
           {isLoggedIn ? (
-            <Nav.Link eventKey="3" href="#link"><span>Hello, {userName}!</span>Logout</Nav.Link>
+            <>
+            <Nav eventKey="1" href="#link" ><span>Hello, {userName}!</span></Nav>
+            <Nav.Link eventKey="2" href="#link">Logout</Nav.Link>
+            </>
           ) : (
-            <Nav.Link eventKey="4" href={url} >Login</Nav.Link>
+            <Nav.Link eventKey="3" href={url} >Login</Nav.Link>
           )}
         </Nav>
       </NavbarReact.Collapse>

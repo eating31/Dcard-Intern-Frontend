@@ -22,7 +22,7 @@ function DetailTask() {
 
   const [issues, setIssues] = useState([])
 
-  const {issueUrl, setIssueUrl} = useContext(Context)
+  const {issueData, setIssueData} = useContext(Context)
 
   const navigate = useNavigate()
 
@@ -31,7 +31,7 @@ useEffect(()=>{
   console.log(status)
 async function updateState(){
   let s = status
-  const LabelUrl =issueUrl.labels[0].url
+  const LabelUrl =issueData.labels[0].url
   console.log(LabelUrl)
   let color = '';
   if(status === 'open'){
@@ -63,15 +63,24 @@ async function updateState(){
 },[status])
 
 async function getIssue(){
-  await axios.get(issueUrl.url)
+  console.log(issueData)
+  await axios.get(issueData.url, {
+    headers:{
+      "Authorization": 'token ' +localStorage.getItem("access_token")
+      }
+  })
     .then(data=>{
       console.log(data.data)
       setIssues(data.data)
     }).catch(err => console.log(err))
-  setIssueUrl(issueUrl);
+  setIssueData(issueData);
 }
 
 useEffect(()=>{
+  //從url取得repoName
+  const url = issueData.repository_url;
+  const repoName = url.split("/").pop()
+  setRepo(repoName)
   getIssue()
 },[])
 
@@ -81,7 +90,7 @@ useEffect(()=>{
         "body":content 
     }
     console.log(data)
-      await axios.patch(issueUrl.url, data, {
+      await axios.patch(issueData.url, data, {
       headers:{
             "Authorization": "bearer " + process.env.REACT_APP_GITHUB_TOKEN
             }
@@ -93,7 +102,7 @@ async function deleteData() {
     const data = {
         "state":"closed",
     }
-    const a = await axios.patch(issueUrl.url, data, {
+    const a = await axios.patch(issueData.url, data, {
         headers:{
             "Authorization": "bearer " + process.env.REACT_APP_GITHUB_TOKEN
             }
@@ -108,7 +117,7 @@ const icon = () => {
 
   return (
     <div className='container'> 
-      <Card>
+      <Card className='container'>
         <Card.Body>
           <Card.Title className='row'>
             <DropdownButton
@@ -116,7 +125,7 @@ const icon = () => {
                 id="issue_id"
                 drop="end"
                 variant="white"
-                // title={issueUrl.labels[0].name}
+                // title={issueData.labels[0].name}
                 title="open"
               >
 
@@ -143,7 +152,7 @@ const icon = () => {
         </Card.Body>
       </Card>
 
-      {issueUrl && issueUrl.labels.map(each => {return(
+      {issueData && issueData.labels.map(each => {return(
         <p>{each.name}</p>
       )})}
       {/* <button onClick={}>list label</button> */}
@@ -152,3 +161,40 @@ const icon = () => {
 }
 
 export default DetailTask
+
+// update
+// const UPDATE_ISSUE_MUTATION = `
+//   mutation {
+//     updateIssue(input: {id: "ISSUE_ID", title: "NEW_TITLE", body: "NEW_BODY"}) {
+//       issue {
+//         id
+//         title
+//         body
+//       }
+//     }
+//   }
+// `;
+// axios.post("https://api.github.com/graphql", {
+//   query: UPDATE_ISSUE_MUTATION
+// }, {
+//   headers: {
+//     Authorization: `Bearer ${process.env.REACT_APP_GITHUB_TOKEN}`
+//   }
+// })
+// .then(response => {
+//   console.log(response.data);
+// })
+// .catch(error => {
+//   console.error(error);
+// });
+
+// create
+// mutation {
+//   createIssue(input: {repositoryId: "REPO_ID", title: "ISSUE_TITLE", body: "ISSUE_BODY"}) {
+//     issue {
+//       id
+//       title
+//       body
+//     }
+//   }
+//}
