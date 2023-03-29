@@ -1,4 +1,4 @@
-import React,{useEffect, useState, useContext} from 'react'
+import React,{useEffect, useState, useContext, useRef} from 'react'
 import { Context } from "../Context/Context";
 import axios from 'axios';
 import AddTask from './AddTask';
@@ -9,27 +9,31 @@ import Col from 'react-bootstrap/Col';
 import Form from 'react-bootstrap/Form';
 import Row from 'react-bootstrap/Row';
 import Badge from 'react-bootstrap/Badge';
+import Spinner from 'react-bootstrap/Spinner';
 
 import Card from 'react-bootstrap/Card';
-import moment from 'moment';
 
 function ListTask() {
-   // const [rerender, setRerender] = useState(false)
     const [userData, setUserData] = useState({})
     const [userIssues, setUserIssues] = useState([])
     const {issueData, setIssueData} = useContext(Context)
     const {userName, setUserName} = useContext(Context)
     const history = useNavigate()
-    // const [repo, setRepo] = useState()
+    
+    const [loginLoading, setLoginLoading] = useState(false);
 
-    const [isLoading, setIsLoading] = useState(false);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
 
-
+  
+    const [cardLoading, setCarfLoading] = useState(false);
     // const getSingleRepoIssues = async()=>{
     //     await axios.get("https://api.github.com/repos/eating31/"+repo+"/issues")
     //     .then(data =>{
     //         console.log(data.data)
     //         setUserIssues(data.data)
+
+
     //     })
     // }
 
@@ -43,7 +47,7 @@ function ListTask() {
 
         if(codeParams &&(localStorage.getItem("access_token")===null)){
             async function getAccessToken() {
-                setIsLoading(true);
+                setLoginLoading(true);
                 await axios.get("http://localhost:4000/getAccessToken?code="+ codeParams)
                 .then(data =>{
                     if(data.data.access_token) {
@@ -53,7 +57,7 @@ function ListTask() {
                 })
                 .then(()=> getUserData())
                 .catch(err => console.log(err))
-                .finally(()=>  setIsLoading(false))
+                .finally(()=>  setLoginLoading(false))
             }
           getAccessToken()
           // getUserData()
@@ -74,41 +78,6 @@ async function getUserData(req, res) {
         setUserData(data.data)
       }).catch(err =>console.log(err))
  }
-
-// async function getPrivateIssues(req, res) {
-//     const query = `{ 
-//         user(login:"eating31") { 
-//             repositories(first: 100) {
-//                 nodes {
-//                   name
-//                   id
-//                   issues(first: 100, states: [OPEN, CLOSED]) {
-//                     nodes {
-//                       id
-//                       title
-//                       body
-//                       labels(first:1) {
-//                         edges {
-//                           node {
-//                             name
-//                           }
-//                         }
-//                       }
-//                     }
-//                   }
-//                 }
-//               }
-//         }
-//       }`
-//       const a = await axios.post("https://api.github.com/graphql", {query},{
-//         headers:{
-//             "Authorization": "bearer " + process.env.REACT_APP_GITHUB_TOKEN
-//         }
-//       }).then(data =>{console.log(data.data.data.user.repositories.nodes)
-//         //setUserIssues(data.data.data.user.issues.nodes)
-//     }).catch(err => console.log(err))
-//       console.log(a)
-// }
 
 // async function updateData(req, res) {
 //     const data = {
@@ -134,25 +103,27 @@ function Detail(e, content) {
 }
 
 async function searchData(req, res) {
-    
+    setCarfLoading(true)
     // 所有資料
-    const a = await axios.get("https://api.github.com/search/issues?q=user:eating31+sort:created&per_page=10&page=1",{
+    const a = await axios.get(`https://api.github.com/search/issues?q=user:eating31+sort:created&per_page=6&page=${page}`,{
         headers:{
             "Authorization": 'token ' +localStorage.getItem("access_token")
             }
-    }).then(data =>{console.log(data.data)
+    }).then(data =>{
         console.log(data.data)
-    setUserIssues(data.data.items)
-    })
+        const temp = data.data.items
+        // setUserIssues(data.data.items)
+
+        setUserIssues([...userIssues, ...temp]);
+        setPage(page + 1);
+        setHasMore(temp.length === 10);
+
+
+    }).then(()=> setCarfLoading(false))
     .catch(err => console.log(err))
     console.log(a)
 }
 
-
-// function logout() {
-//     localStorage.removeItem("access_token");
-//     history(0)
-// }
 
 const [token, setToken] = useState(null);
 const [selectedScopes, setSelectedScopes] = useState([]);
@@ -188,17 +159,36 @@ const Bg = (color) =>{
         return 'danger'
     }
 }
+
+const TimeDiff = (timestamp) =>{
+    const secondsAgo = Math.floor((new Date() - new Date(timestamp)) / 1000);
+    let temp ='';
+    if (secondsAgo < 60) {
+        temp = "updated now";
+    } else if (secondsAgo < 3600) {
+        temp = `updated ${Math.floor(secondsAgo / 60)} minutes ago`
+    } else if (secondsAgo < 86400){
+        temp = `updated ${Math.floor(secondsAgo / 3600)} hours ago`
+    }else{
+        const options = { month: "short", day: "numeric" };
+        temp =`updated ${new Date(timestamp).toLocaleDateString("en-US", options)}`
+    }
+    return temp
+}
+
+
+
   return (
     <div className="container">
-        <div>
-      {isLoading ? (
-        <div>Loading...</div>
+      {loginLoading ? (
+         <div className='d-flex justify-content-center'>
+            <Spinner animation="border" />
+         </div>
         ) : (
             <div>
             ok
             </div>
         )}
-        </div>
 
         {localStorage.getItem("access_token") ?
         <div>
@@ -246,11 +236,16 @@ const Bg = (color) =>{
                 <img width="100px" height="100px" src={userData.avatar_url} />
               </a>
               <Row xs={1} md={2} className="g-4">
+                {/* 不確定等待圈圈是不是要放這 */}
+              {cardLoading ? (
+                <div className='d-flex justify-content-end'>
+                   <Spinner animation="border" />
+                   </div>
+                ) : (
+                    <>
               {userIssues.length !== 0 && userIssues.map(each => {
-                const now = moment()
-                const create = moment(each.created_at.slice(0,10))
-                const day = now.diff(create, 'day')
-                console.log(day)
+                const a = TimeDiff(each.created_at)
+
                 return(
             <a href='/' className="text-decoration-none text-dark" onClick={e=>Detail(e, each)}>
                     <Col>
@@ -258,17 +253,20 @@ const Bg = (color) =>{
                         <Card.Body>
                           <Card.Subtitle className="mb-2 text-muted">
                             <Badge pill bg={Bg(each.labels[0].color)}>{each.labels[0].name}</Badge>
-                            {"  "}{day}{" days ago"}
+                            {"  "}{a}
                           </Card.Subtitle>
                           <Card.Title>{each.title}</Card.Title>
                           <Card.Text>
-                          {each.body.slice(0,50)}...
+                          {each.body.slice(0,50)}...more
                           </Card.Text>
                         </Card.Body>
                       </Card>
                     </Col>
                 </a>
               )})}
+                
+                </>
+                )}
               </Row>
             </>
             :

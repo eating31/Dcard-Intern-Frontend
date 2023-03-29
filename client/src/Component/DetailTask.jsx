@@ -8,8 +8,7 @@ import DropdownButton from 'react-bootstrap/DropdownButton';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPenToSquare, faTrash,faSquare, faEllipsisVertical } from '@fortawesome/free-solid-svg-icons'
 import { useNavigate } from "react-router-dom";
-
-
+import '../index.css';
 
 function DetailTask() {
   const [isEdit, setIsEdit] =useState(false)
@@ -19,6 +18,7 @@ function DetailTask() {
   const [userRepo, setUserRepo] = useState([])
   const [status, setStatus] = useState()
   
+  const [loading, setLoading] = useState(true);
 
   const [issues, setIssues] = useState([])
 
@@ -74,6 +74,7 @@ async function getIssue(){
       setIssues(data.data)
     }).catch(err => console.log(err))
   setIssueData(issueData);
+  setLoading(false)
 }
 
 useEffect(()=>{
@@ -82,6 +83,7 @@ useEffect(()=>{
   const repoName = url.split("/").pop()
   setRepo(repoName)
   getIssue()
+
 },[])
 
   async function updateData(req, res) {
@@ -117,18 +119,24 @@ const icon = () => {
 
   return (
     <div className='container'> 
+   {loading ? (
+        <div className="loader-container">
+      	  <div className="spinner"></div>
+        </div>
+      ) : (
+        <>
       <Card className='container'>
         <Card.Body>
           <Card.Title className='row'>
             <DropdownButton
-              className='col no-arrow'
+              className='col e-caret-hide'
                 id="issue_id"
                 drop="end"
                 variant="white"
                 // title={issueData.labels[0].name}
                 title="open"
               >
-
+                
               <Dropdown.Item eventKey="1" onClick={e => setStatus('open')} className='text-secondary'><FontAwesomeIcon icon={faSquare} size="2xs" /> open</Dropdown.Item>
               <Dropdown.Item eventKey="2" onClick={e => setStatus('In%20progress')} className='text-danger'> <FontAwesomeIcon icon={faSquare} size="2xs" /> In progress</Dropdown.Item>
               <Dropdown.Item eventKey="3" onClick={e => setStatus('Done')} className='text-success'><FontAwesomeIcon icon={faSquare} size="2xs" /> Done</Dropdown.Item>
@@ -145,6 +153,9 @@ const icon = () => {
           <Card.Title>
             Title : {issues.title}
           </Card.Title>
+          <Card.Subtitle className="mb-2 text-muted">
+            repo : {repo}
+          </Card.Subtitle>
           <Card.Text>
             body : {issues.body}
           </Card.Text>
@@ -156,6 +167,8 @@ const icon = () => {
         <p>{each.name}</p>
       )})}
       {/* <button onClick={}>list label</button> */}
+      </>
+      )}
     </div>
   )
 }

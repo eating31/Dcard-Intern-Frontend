@@ -5,6 +5,7 @@ import Test from './Component/test';
 import Detail from './Page/Detail';
 import { ContextProvider } from './Context/Context';
 import Navbar from './Component/Navbar';
+import "./App.css"
 
 function App() {
 
