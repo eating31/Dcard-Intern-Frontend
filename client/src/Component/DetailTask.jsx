@@ -1,14 +1,18 @@
 import React,{useEffect, useState, useContext} from 'react'
 import axios from 'axios';
 import { Context } from "../Context/Context";
+
 import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
+import Col from 'react-bootstrap/Col';
 import Dropdown from 'react-bootstrap/Dropdown';
 import DropdownButton from 'react-bootstrap/DropdownButton';
+import Spinner from 'react-bootstrap/Spinner';
+import { Form, Row } from 'react-bootstrap';
+
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPenToSquare, faTrash,faSquare, faEllipsisVertical } from '@fortawesome/free-solid-svg-icons'
-import { useNavigate } from "react-router-dom";
-import '../index.css';
+
 
 function DetailTask() {
   const [isEdit, setIsEdit] =useState(false)
@@ -23,9 +27,6 @@ function DetailTask() {
   const [issues, setIssues] = useState([])
 
   const {issueData, setIssueData} = useContext(Context)
-
-  const navigate = useNavigate()
-
 
 useEffect(()=>{
   console.log(status)
@@ -119,45 +120,75 @@ const icon = () => {
 
   return (
     <div className='container'> 
-   {loading ? (
-        <div className="loader-container">
-      	  <div className="spinner"></div>
-        </div>
+    {loading ? (
+       <div className='d-flex justify-content-center'>
+      	   <Spinner animation="border" />
+      </div>
       ) : (
         <>
+      <h2 className='py-3'>Issue Details</h2>  
       <Card className='container'>
         <Card.Body>
           <Card.Title className='row'>
             <DropdownButton
-              className='col e-caret-hide'
-                id="issue_id"
+              className='col'
                 drop="end"
                 variant="white"
                 // title={issueData.labels[0].name}
                 title="open"
               >
-                
               <Dropdown.Item eventKey="1" onClick={e => setStatus('open')} className='text-secondary'><FontAwesomeIcon icon={faSquare} size="2xs" /> open</Dropdown.Item>
               <Dropdown.Item eventKey="2" onClick={e => setStatus('In%20progress')} className='text-danger'> <FontAwesomeIcon icon={faSquare} size="2xs" /> In progress</Dropdown.Item>
               <Dropdown.Item eventKey="3" onClick={e => setStatus('Done')} className='text-success'><FontAwesomeIcon icon={faSquare} size="2xs" /> Done</Dropdown.Item>
             </DropdownButton>
             <DropdownButton 
               className="col d-flex justify-content-end" 
-              id="dropdown-basic-button" 
               variant="white"
               title={icon()}>
               <Dropdown.Item onClick={e => setIsEdit(true)} className="text-secondary"><FontAwesomeIcon icon={faPenToSquare} size="xs" /> Edit</Dropdown.Item>
               <Dropdown.Item onClick={e => deleteData(e)} className="text-danger"><FontAwesomeIcon icon={faTrash} size="xs" /> Delete</Dropdown.Item>
             </DropdownButton>
           </Card.Title>
-          <Card.Title>
-            Title : {issues.title}
-          </Card.Title>
           <Card.Subtitle className="mb-2 text-muted">
             repo : {repo}
           </Card.Subtitle>
+        {isEdit ? 
+        <Form>
+        <Card.Title className='py-3'>
+        
+          <Form.Group as={Row} className="mb-3" controlId="formHorizontalEmail">
+            <Form.Label column sm={2}>
+              Title
+            </Form.Label>
+            <Col sm={10}>
+              <Form.Control type="text" value={issues.title} />
+            </Col>
+          </Form.Group>
+          </Card.Title>
           <Card.Text>
-            body : {issues.body}
+          <Form.Group as={Row} row={3} className="mb-3" controlId="formHorizontalEmail">
+            <Form.Label column sm={2}>
+              Body
+            </Form.Label>
+            <Col sm={10}>
+              <Form.Control as="textarea" rows={4} value={issues.body} />
+            </Col>
+          </Form.Group>
+        </Card.Text>
+        </Form>
+          : 
+            <>
+            <Card.Title className='py-3'>
+              Title : {issues.title}
+            </Card.Title>
+            <Card.Text className='py-3'>
+              body : {issues.body}
+            </Card.Text>
+            </>
+          }
+          
+          <Card.Text className='py-3 text-secondary'>
+            update : {new Date(issues.updated_at).toLocaleString()}
           </Card.Text>
           {isEdit && <Button variant="primary" onClick={e => updateData}>確定</Button>}
         </Card.Body>
@@ -166,7 +197,7 @@ const icon = () => {
       {issueData && issueData.labels.map(each => {return(
         <p>{each.name}</p>
       )})}
-      {/* <button onClick={}>list label</button> */}
+
       </>
       )}
     </div>

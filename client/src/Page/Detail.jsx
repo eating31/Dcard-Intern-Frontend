@@ -3,7 +3,7 @@ import DetailTask from '../Component/DetailTask';
 
 function Detail() {
   return (
-    <div>Detail
+    <div>
         <DetailTask />
     </div>
   )

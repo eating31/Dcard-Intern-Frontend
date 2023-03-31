@@ -54,10 +54,10 @@ useEffect(()=>{
       <NavbarReact.Brand href="/">Dcard-Intern</NavbarReact.Brand>
       <NavbarReact.Toggle aria-controls="basic-navbar-nav" />
       <NavbarReact.Collapse id="basic-navbar-nav">
-        <Nav className="me-auto" onSelect={handleSelect}>
+        <Nav className="ms-auto" onSelect={handleSelect}>
           {isLoggedIn ? (
             <>
-            <Nav eventKey="1" href="#link" ><span>Hello, {userName}!</span></Nav>
+            <Nav.Link disabled>Hello, {userName}!</Nav.Link>
             <Nav.Link eventKey="2" href="#link">Logout</Nav.Link>
             </>
           ) : (

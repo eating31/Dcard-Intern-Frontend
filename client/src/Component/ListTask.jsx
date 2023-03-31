@@ -4,6 +4,8 @@ import axios from 'axios';
 import AddTask from './AddTask';
 import { useNavigate } from "react-router-dom";
 
+import Login from './Login';
+
 import Button from 'react-bootstrap/Button';
 import Col from 'react-bootstrap/Col';
 import Form from 'react-bootstrap/Form';
@@ -24,6 +26,8 @@ function ListTask() {
 
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
+    const [top, setTop] = useState(0);
+
 
   
     const [cardLoading, setCarfLoading] = useState(false);
@@ -37,7 +41,7 @@ function ListTask() {
     //     })
     // }
 
-    useEffect(()=>{
+    useEffect(() => {
         const querytring = window.location.search;
         const urlParams = new URLSearchParams(querytring);
         console.log(urlParams)
@@ -59,9 +63,10 @@ function ListTask() {
                 .catch(err => console.log(err))
                 .finally(()=>  setLoginLoading(false))
             }
-          getAccessToken()
-          // getUserData()
+            getAccessToken()
          // 底下位置要動 不然他已經做好了但還沒顯示
+        }else{
+            getUserData()
         }
 
     },[])
@@ -105,7 +110,7 @@ function Detail(e, content) {
 async function searchData(req, res) {
     setCarfLoading(true)
     // 所有資料
-    const a = await axios.get(`https://api.github.com/search/issues?q=user:eating31+sort:created&per_page=6&page=${page}`,{
+    const a = await axios.get(`https://api.github.com/search/issues?q=user:eating31+sort:created&per_page=12&page=${page}`,{
         headers:{
             "Authorization": 'token ' +localStorage.getItem("access_token")
             }
@@ -114,9 +119,9 @@ async function searchData(req, res) {
         const temp = data.data.items
         // setUserIssues(data.data.items)
 
-        setUserIssues([...userIssues, ...temp]);
+        setUserIssues(preIssues => [...preIssues, ...temp]);
         setPage(page + 1);
-        setHasMore(temp.length === 10);
+        setHasMore(temp.length === 12);
 
 
     }).then(()=> setCarfLoading(false))
@@ -124,31 +129,11 @@ async function searchData(req, res) {
     console.log(a)
 }
 
-
-const [token, setToken] = useState(null);
-const [selectedScopes, setSelectedScopes] = useState([]);
-
-useEffect(()=>{
-    console.log(selectedScopes)
-},[selectedScopes])
-const CLIENT_ID = "7e2ec405ab8a9a9c9528";
+function handelSubmit(){
+console.log('submit')
+}
 
 
-// 使用GitHub OAuth2 API授权用户并请求访问令牌
-const handleLogin = async () => {
-  const url = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=${selectedScopes.join(" ")}`;
-  console.log(url)
-  window.location.assign(url);
-};
-
-// 在用户选择的范围中切换
-const toggleScope = (scope) => {
-  if (selectedScopes.includes(scope)) {
-    setSelectedScopes(selectedScopes.filter((s) => s !== scope));
-  } else {
-    setSelectedScopes([...selectedScopes, scope]);
-  }
-};
 
 const Bg = (color) =>{
     if(color === '198754'){
@@ -176,7 +161,28 @@ const TimeDiff = (timestamp) =>{
     return temp
 }
 
+useEffect(() => {
+  function handleScroll() {
+    setTop(document.documentElement.scrollTop || document.body.scrollTop || window.pageYOffset);
+  }
+  window.addEventListener('scroll', handleScroll);
+  return () => window.removeEventListener('scroll', handleScroll);
+}, []);
 
+const scrollablePageHeight = document.documentElement.scrollHeight -  window.innerHeight;
+
+useEffect(()=>{
+console.log(hasMore)
+},[hasMore])
+
+useEffect(() => {
+  if (top >= scrollablePageHeight-30) {
+    console.log('iii')
+    if( (localStorage.getItem("access_token") !== null && hasMore)){
+        searchData()
+    }
+  }
+}, [top]);
 
   return (
     <div className="container">
@@ -192,6 +198,9 @@ const TimeDiff = (timestamp) =>{
 
         {localStorage.getItem("access_token") ?
         <div>
+{/* test div */}
+            <div>
+
         <h1>Success!</h1>
         <div className='bg-info rounded-pill'>
         <Form className='px-5 py-2'>
@@ -213,7 +222,7 @@ const TimeDiff = (timestamp) =>{
       </Form.Group>
 
       <Form.Group as={Col} className="d-flex justify-content-end">
-        <Button className="btn" variant="primary" type="submit">
+        <Button className="btn" variant="primary" onClick={handelSubmit}>
         Submit
       </Button>
       </Form.Group>
@@ -227,7 +236,6 @@ const TimeDiff = (timestamp) =>{
         <h3>Get User Data</h3>
         {/* <button onClick={getPrivateIssues}>Get private issue</button> */}
         <button onClick={searchData}>Get Data</button>
-        <button onClick={getUserData}>Get User</button>
             {Object.keys(userData).length !== 0 ?
             <>
               <h4>Hi there {userData.login}</h4>
@@ -238,62 +246,55 @@ const TimeDiff = (timestamp) =>{
               <Row xs={1} md={2} className="g-4">
                 {/* 不確定等待圈圈是不是要放這 */}
               {cardLoading ? (
-                <div className='d-flex justify-content-end'>
-                   <Spinner animation="border" />
-                   </div>
+                  <div className='d-flex justify-content-center'>
+                     <Spinner animation="border" />
+                  </div>
                 ) : (
                     <>
               {userIssues.length !== 0 && userIssues.map(each => {
                 const a = TimeDiff(each.created_at)
 
                 return(
-            <a href='/' className="text-decoration-none text-dark" onClick={e=>Detail(e, each)}>
-                    <Col>
-                      <Card key={each.id}>
-                        <Card.Body>
-                          <Card.Subtitle className="mb-2 text-muted">
-                            <Badge pill bg={Bg(each.labels[0].color)}>{each.labels[0].name}</Badge>
-                            {"  "}{a}
-                          </Card.Subtitle>
-                          <Card.Title>{each.title}</Card.Title>
-                          <Card.Text>
-                          {each.body.slice(0,50)}...more
-                          </Card.Text>
-                        </Card.Body>
-                      </Card>
-                    </Col>
-                </a>
+                    <a href='/' className="text-decoration-none text-dark" onClick={e=>Detail(e, each)}>
+                        <Col>
+                        <Card key={each.id}>
+                            <Card.Body>
+                            <Card.Subtitle className="mb-2 text-muted">
+                                <Badge pill bg={Bg(each.labels[0].color)}>{each.labels[0].name}</Badge>
+                                {"  "}{a}
+                            </Card.Subtitle>
+                            <Card.Title>{each.title}</Card.Title>
+                            <Card.Text>
+                            {each.body.slice(0,50)}...more
+                            </Card.Text>
+                            </Card.Body>
+                        </Card>
+                        </Col>
+                    </a>
               )})}
                 
                 </>
                 )}
               </Row>
+              {!hasMore && (
+                <div className="p-3 d-flex justify-content-center">
+                    <p className='text-secondary'>已經是最後了</p>
+                </div>
+                
+                )}
+
+               
+
             </>
             :
             <></>    
             }
+        </div> 
+            <aside>123</aside>
+{/* test div */}
         </div>
         :
-        <>
-        <h1>You haven't login</h1>
-        <p>请登录以授权此应用程序访问您的GitHub数据。</p>
-          <ul>
-            <li>
-              <label>
-                <input type="checkbox" onChange={() => toggleScope("user")} checked={selectedScopes.includes("user")} />
-                访问用户资料
-              </label>
-            </li>
-            <li>
-              <label>
-                <input type="checkbox" onChange={() => toggleScope("repo")} checked={selectedScopes.includes("repo")} />
-                访问用户存储库
-              </label>
-            </li>
-          </ul>
-          <button onClick={handleLogin}>登录</button>
-        {/* <a href='/login'> Login</a> */}
-        </>
+        <Login />
     }
 
     </div>

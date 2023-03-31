@@ -3,7 +3,7 @@ import ListTask from '../Component/ListTask'
 
 function Home() {
   return (
-    <div>Home
+    <div>
         <ListTask />
     </div>
   )
