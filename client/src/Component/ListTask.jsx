@@ -2,25 +2,17 @@ import React,{useEffect, useState, useContext, useRef} from 'react'
 import { Context } from "../Context/Context";
 import axios from 'axios';
 import AddTask from './AddTask';
-import { useNavigate } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 
 import Login from './Login';
-
-import Button from 'react-bootstrap/Button';
-import Col from 'react-bootstrap/Col';
-import Form from 'react-bootstrap/Form';
-import Row from 'react-bootstrap/Row';
-import Badge from 'react-bootstrap/Badge';
-import Spinner from 'react-bootstrap/Spinner';
-
-import Card from 'react-bootstrap/Card';
+import { Form, Row, Col, Card, Button, Spinner, Badge } from 'react-bootstrap';
 
 function ListTask() {
     const [userData, setUserData] = useState({})
     const [userIssues, setUserIssues] = useState([])
     const {issueData, setIssueData} = useContext(Context)
     const {userName, setUserName} = useContext(Context)
-    const history = useNavigate()
+    const history = useHistory()
     
     const [loginLoading, setLoginLoading] = useState(false);
 
@@ -252,7 +244,7 @@ useEffect(() => {
                 ) : (
                     <>
               {userIssues.length !== 0 && userIssues.map(each => {
-                const a = TimeDiff(each.created_at)
+                const a = TimeDiff(each.updated_at)
 
                 return(
                     <a href='/' className="text-decoration-none text-dark" onClick={e=>Detail(e, each)}>
@@ -290,7 +282,7 @@ useEffect(() => {
             <></>    
             }
         </div> 
-            <aside>123</aside>
+            <aside></aside>
 {/* test div */}
         </div>
         :

@@ -2,13 +2,7 @@ import React,{useEffect, useState, useContext} from 'react'
 import axios from 'axios';
 import { Context } from "../Context/Context";
 
-import Button from 'react-bootstrap/Button';
-import Card from 'react-bootstrap/Card';
-import Col from 'react-bootstrap/Col';
-import Dropdown from 'react-bootstrap/Dropdown';
-import DropdownButton from 'react-bootstrap/DropdownButton';
-import Spinner from 'react-bootstrap/Spinner';
-import { Form, Row } from 'react-bootstrap';
+import { Form, Row, Col, Card, Button, Spinner, Dropdown, DropdownButton, Modal } from 'react-bootstrap';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPenToSquare, faTrash,faSquare, faEllipsisVertical } from '@fortawesome/free-solid-svg-icons'
@@ -19,14 +13,24 @@ function DetailTask() {
   const [title, setTitle] = useState()
   const [content, setContent] = useState()
   const [repo, setRepo] = useState()
-  const [userRepo, setUserRepo] = useState([])
   const [status, setStatus] = useState()
   
   const [loading, setLoading] = useState(true);
-
+  const [editLoading, setEditLoading] = useState(false)
   const [issues, setIssues] = useState([])
 
+  const [modalShow, setModalShow] = useState(false)
+
   const {issueData, setIssueData} = useContext(Context)
+
+  useEffect(()=>{
+    //從url取得repoName
+    const url = issueData.repository_url;
+    const repoName = url.split("/").pop()
+    setRepo(repoName)
+    getIssue()
+  
+  },[])
 
 useEffect(()=>{
   console.log(status)
@@ -59,35 +63,25 @@ async function updateState(){
   if(status){
     updateState()
   }
-  
-
 },[status])
 
 async function getIssue(){
-  console.log(issueData)
   await axios.get(issueData.url, {
     headers:{
       "Authorization": 'token ' +localStorage.getItem("access_token")
       }
   })
     .then(data=>{
-      console.log(data.data)
+      setContent(data.data.body)
+      setTitle(data.data.title)
       setIssues(data.data)
     }).catch(err => console.log(err))
   setIssueData(issueData);
   setLoading(false)
 }
 
-useEffect(()=>{
-  //從url取得repoName
-  const url = issueData.repository_url;
-  const repoName = url.split("/").pop()
-  setRepo(repoName)
-  getIssue()
-
-},[])
-
   async function updateData(req, res) {
+    setEditLoading(true)
     const data = {
         "title":title,
         "body":content 
@@ -97,7 +91,13 @@ useEffect(()=>{
       headers:{
             "Authorization": "bearer " + process.env.REACT_APP_GITHUB_TOKEN
             }
-    }).then(data =>console.log(data))
+    }).then(() =>{
+      getIssue()
+      setIsEdit(false)
+      setEditLoading(false)
+    }).then(()=>{
+      setModalShow(true)
+    })
     .catch(err => console.log(err))
 }
 
@@ -117,6 +117,10 @@ async function deleteData() {
 const icon = () => {
   return <FontAwesomeIcon icon={faEllipsisVertical} />
 }
+
+const handleClose = () => {
+  setModalShow(false)
+};
 
   return (
     <div className='container'> 
@@ -161,7 +165,7 @@ const icon = () => {
               Title
             </Form.Label>
             <Col sm={10}>
-              <Form.Control type="text" value={issues.title} />
+              <Form.Control type="text" value={title} onChange={e => setTitle(e.target.value)}/>
             </Col>
           </Form.Group>
           </Card.Title>
@@ -171,7 +175,7 @@ const icon = () => {
               Body
             </Form.Label>
             <Col sm={10}>
-              <Form.Control as="textarea" rows={4} value={issues.body} />
+              <Form.Control as="textarea" rows={4} value={content} onChange={e => setContent(e.target.value)} />
             </Col>
           </Form.Group>
         </Card.Text>
@@ -179,18 +183,35 @@ const icon = () => {
           : 
             <>
             <Card.Title className='py-3'>
-              Title : {issues.title}
+              Title : {title}
             </Card.Title>
             <Card.Text className='py-3'>
-              body : {issues.body}
+              Body : {content}
             </Card.Text>
             </>
           }
           
-          <Card.Text className='py-3 text-secondary'>
-            update : {new Date(issues.updated_at).toLocaleString()}
+          <Card.Text className='pt-3 text-secondary'>
+            created : {new Date(issues.created_at).toLocaleString()}
           </Card.Text>
-          {isEdit && <Button variant="primary" onClick={e => updateData}>確定</Button>}
+          <Card.Text className='text-secondary'>
+            updated : {new Date(issues.updated_at).toLocaleString()}
+          </Card.Text>
+          
+          {isEdit && 
+            <Button variant="primary" onClick={e => updateData()} disabled={editLoading}>
+               {editLoading &&
+                <Spinner
+                    as="span"
+                    animation="border"
+                    size="sm"
+                    role="status"
+                    aria-hidden="true"
+                    />
+                }
+                {"  "}確定
+            </Button>}
+
         </Card.Body>
       </Card>
 
@@ -200,45 +221,21 @@ const icon = () => {
 
       </>
       )}
+     <div>
+      <Modal show={modalShow} onHide={handleClose} animation={false} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Updated an issue</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>Successfully updated an issue</Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" onClick={handleClose}>
+            確定
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      </div>
     </div>
   )
 }
 
 export default DetailTask
-
-// update
-// const UPDATE_ISSUE_MUTATION = `
-//   mutation {
-//     updateIssue(input: {id: "ISSUE_ID", title: "NEW_TITLE", body: "NEW_BODY"}) {
-//       issue {
-//         id
-//         title
-//         body
-//       }
-//     }
-//   }
-// `;
-// axios.post("https://api.github.com/graphql", {
-//   query: UPDATE_ISSUE_MUTATION
-// }, {
-//   headers: {
-//     Authorization: `Bearer ${process.env.REACT_APP_GITHUB_TOKEN}`
-//   }
-// })
-// .then(response => {
-//   console.log(response.data);
-// })
-// .catch(error => {
-//   console.error(error);
-// });
-
-// create
-// mutation {
-//   createIssue(input: {repositoryId: "REPO_ID", title: "ISSUE_TITLE", body: "ISSUE_BODY"}) {
-//     issue {
-//       id
-//       title
-//       body
-//     }
-//   }
-//}
