@@ -2,9 +2,11 @@ import React,{useEffect, useState, useContext, useRef} from 'react'
 import { Context } from "../Context/Context";
 import axios from 'axios';
 import AddTask from './AddTask';
-import { useHistory } from "react-router-dom";
+// import { useNavigate } from 'react-router-dom';
 
+import DetailTask from './DetailTask';
 import Login from './Login';
+import Siders from './Siders'
 import { Form, Row, Col, Card, Button, Spinner, Badge } from 'react-bootstrap';
 
 function ListTask() {
@@ -12,8 +14,10 @@ function ListTask() {
     const [userIssues, setUserIssues] = useState([])
     const {issueData, setIssueData} = useContext(Context)
     const {userName, setUserName} = useContext(Context)
-    const history = useHistory()
+    // const history = useNavigate()
     
+    const {detailShow, setDetailShow} = useContext(Context)
+
     const [loginLoading, setLoginLoading] = useState(false);
 
     const [page, setPage] = useState(1);
@@ -21,7 +25,8 @@ function ListTask() {
     const [top, setTop] = useState(0);
 
 
-  
+    const [test, setTest] = useState(false)
+
     const [cardLoading, setCarfLoading] = useState(false);
     // const getSingleRepoIssues = async()=>{
     //     await axios.get("https://api.github.com/repos/eating31/"+repo+"/issues")
@@ -32,6 +37,10 @@ function ListTask() {
 
     //     })
     // }
+
+    useEffect(()=>{
+        console.log(issueData)
+    },[issueData])
 
     useEffect(() => {
         const querytring = window.location.search;
@@ -70,39 +79,23 @@ async function getUserData(req, res) {
         }
      })
      .then((data) => {
-        console.log(data)
-        setUserName(data.data.name)
+        setUserName(data.data)
         setUserData(data.data)
       }).catch(err =>console.log(err))
  }
 
-// async function updateData(req, res) {
-//     const data = {
-//         "title":title,
-//         "body":content 
-//     }
-//     console.log(data)
-//     const a = await axios.patch("https://api.github.com/repos/eating31/"+repo+"/issues/2", data, {
-//         headers:{
-//             "Authorization": "bearer " + process.env.REACT_APP_GITHUB_TOKEN
-//             }
-//     }).then(data =>console.log(data))
-//     .catch(err => console.log(err))
-//     console.log(a)
-// }
-
-function Detail(e, content) {
+ async function Detail(e, content) {
     e.preventDefault();
-    console.log(content.labels[0].url)
+    console.log(content)
     setIssueData(content);
-    history('/detail')
+    setDetailShow(true)
 
 }
 
 async function searchData(req, res) {
     setCarfLoading(true)
     // 所有資料
-    const a = await axios.get(`https://api.github.com/search/issues?q=user:eating31+sort:created&per_page=12&page=${page}`,{
+    await axios.get(`https://api.github.com/search/issues?q=user:eating31+sort:created&per_page=12&page=${page}`,{
         headers:{
             "Authorization": 'token ' +localStorage.getItem("access_token")
             }
@@ -118,7 +111,7 @@ async function searchData(req, res) {
 
     }).then(()=> setCarfLoading(false))
     .catch(err => console.log(err))
-    console.log(a)
+    
 }
 
 function handelSubmit(){
@@ -141,14 +134,14 @@ const TimeDiff = (timestamp) =>{
     const secondsAgo = Math.floor((new Date() - new Date(timestamp)) / 1000);
     let temp ='';
     if (secondsAgo < 60) {
-        temp = "updated now";
+        temp = "created now";
     } else if (secondsAgo < 3600) {
-        temp = `updated ${Math.floor(secondsAgo / 60)} minutes ago`
+        temp = `created ${Math.floor(secondsAgo / 60)} minutes ago`
     } else if (secondsAgo < 86400){
-        temp = `updated ${Math.floor(secondsAgo / 3600)} hours ago`
+        temp = `created ${Math.floor(secondsAgo / 3600)} hours ago`
     }else{
         const options = { month: "short", day: "numeric" };
-        temp =`updated ${new Date(timestamp).toLocaleDateString("en-US", options)}`
+        temp =`created ${new Date(timestamp).toLocaleDateString("en-US", options)}`
     }
     return temp
 }
@@ -176,24 +169,27 @@ useEffect(() => {
   }
 }, [top]);
 
+const handleClose = () => {
+  setTest(false)
+};
+
   return (
-    <div className="container">
-      {loginLoading ? (
+    <div className="row">
+        <div className='col-3'>
+            <Siders />
+        </div>
+        <div className='col-9 pe-5'>
+      {loginLoading &&
          <div className='d-flex justify-content-center'>
             <Spinner animation="border" />
          </div>
-        ) : (
-            <div>
-            ok
-            </div>
-        )}
+        }
 
         {localStorage.getItem("access_token") ?
         <div>
 {/* test div */}
             <div>
 
-        <h1>Success!</h1>
         <div className='bg-info rounded-pill'>
         <Form className='px-5 py-2'>
       <Row className="mb-3">
@@ -225,16 +221,10 @@ useEffect(() => {
         <div className="p-4 d-flex justify-content-end">
         <AddTask />
         </div>
-        <h3>Get User Data</h3>
-        {/* <button onClick={getPrivateIssues}>Get private issue</button> */}
-        <button onClick={searchData}>Get Data</button>
+
             {Object.keys(userData).length !== 0 ?
             <>
-              <h4>Hi there {userData.login}</h4>
 
-              <a href={userData.html_url}>
-                <img width="100px" height="100px" src={userData.avatar_url} />
-              </a>
               <Row xs={1} md={2} className="g-4">
                 {/* 不確定等待圈圈是不是要放這 */}
               {cardLoading ? (
@@ -244,10 +234,10 @@ useEffect(() => {
                 ) : (
                     <>
               {userIssues.length !== 0 && userIssues.map(each => {
-                const a = TimeDiff(each.updated_at)
+                const a = TimeDiff(each.created_at)
 
                 return(
-                    <a href='/' className="text-decoration-none text-dark" onClick={e=>Detail(e, each)}>
+                    <a href='#' className="text-decoration-none text-dark" onClick={e=>Detail(e, each)}>
                         <Col>
                         <Card key={each.id}>
                             <Card.Body>
@@ -257,7 +247,7 @@ useEffect(() => {
                             </Card.Subtitle>
                             <Card.Title>{each.title}</Card.Title>
                             <Card.Text>
-                            {each.body.slice(0,50)}...more
+                            {each.body.slice(0,20)}...more
                             </Card.Text>
                             </Card.Body>
                         </Card>
@@ -282,13 +272,13 @@ useEffect(() => {
             <></>    
             }
         </div> 
-            <aside></aside>
-{/* test div */}
         </div>
         :
         <Login />
     }
 
+</div>
+<DetailTask />
     </div>
   )
 }

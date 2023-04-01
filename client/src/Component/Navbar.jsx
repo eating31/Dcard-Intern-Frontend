@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react'
 import Container from 'react-bootstrap/Container';
-import Nav from 'react-bootstrap/Nav';
+import {Nav, NavDropdown} from 'react-bootstrap';
 import NavbarReact from 'react-bootstrap/Navbar';
 import { Context } from "../Context/Context";
 
@@ -57,8 +57,16 @@ useEffect(()=>{
         <Nav className="ms-auto" onSelect={handleSelect}>
           {isLoggedIn ? (
             <>
-            <Nav.Link disabled>Hello, {userName}!</Nav.Link>
-            <Nav.Link eventKey="2" href="#link">Logout</Nav.Link>
+            <Nav className='pe-5 d-flex align-items-center'>Hello, {userName.name}!</Nav>
+            <NavDropdown title={<img width="40px" height="40px"  className="rounded-circle" src={userName.avatar_url} />}>
+              <NavDropdown.Item>
+                Issue List
+              </NavDropdown.Item>
+              <NavDropdown.Divider />
+              <NavDropdown.Item eventKey="2" href="#link">
+                Logout
+              </NavDropdown.Item>
+            </NavDropdown>
             </>
           ) : (
             <Nav.Link eventKey="3" href={url} >Login</Nav.Link>

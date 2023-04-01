@@ -20,17 +20,23 @@ function DetailTask() {
   const [issues, setIssues] = useState([])
 
   const [modalShow, setModalShow] = useState(false)
-
+  const {detailShow, setDetailShow} = useContext(Context)
   const {issueData, setIssueData} = useContext(Context)
 
   useEffect(()=>{
-    //從url取得repoName
-    const url = issueData.repository_url;
-    const repoName = url.split("/").pop()
-    setRepo(repoName)
-    getIssue()
-  
-  },[])
+    console.log(repo)
+  },[repo])
+
+useEffect(()=>{
+   if(issueData){
+      setIsEdit(false)
+      setLoading(true)
+      const url = issueData.repository_url;
+      const repoName = url.split("/").pop()
+      setRepo(repoName)
+      getIssue()
+    }
+},[issueData])
 
 useEffect(()=>{
   console.log(status)
@@ -76,6 +82,7 @@ async function getIssue(){
       setTitle(data.data.title)
       setIssues(data.data)
     }).catch(err => console.log(err))
+  //什麼意思？？？
   setIssueData(issueData);
   setLoading(false)
 }
@@ -105,13 +112,12 @@ async function deleteData() {
     const data = {
         "state":"closed",
     }
-    const a = await axios.patch(issueData.url, data, {
+   await axios.patch(issueData.url, data, {
         headers:{
             "Authorization": "bearer " + process.env.REACT_APP_GITHUB_TOKEN
             }
     }).then(data =>console.log(data))
     .catch(err => console.log(err))
-    console.log(a)
 }
 
 const icon = () => {
@@ -120,20 +126,22 @@ const icon = () => {
 
 const handleClose = () => {
   setModalShow(false)
+  setDetailShow(false)
 };
 
   return (
     <div className='container'> 
-    {loading ? (
-       <div className='d-flex justify-content-center'>
+    <Modal show={detailShow} onHide={handleClose} animation={false} size="lg" centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Issue Details</Modal.Title>
+        </Modal.Header>
+        {loading ? 
+       <Modal.Title className='d-flex justify-content-center py-5'>
       	   <Spinner animation="border" />
-      </div>
-      ) : (
-        <>
-      <h2 className='py-3'>Issue Details</h2>  
-      <Card className='container'>
-        <Card.Body>
-          <Card.Title className='row'>
+      </Modal.Title>
+       :
+        <Modal.Body className='px-5'>
+        <Modal.Title className='row'>
             <DropdownButton
               className='col'
                 drop="end"
@@ -152,13 +160,13 @@ const handleClose = () => {
               <Dropdown.Item onClick={e => setIsEdit(true)} className="text-secondary"><FontAwesomeIcon icon={faPenToSquare} size="xs" /> Edit</Dropdown.Item>
               <Dropdown.Item onClick={e => deleteData(e)} className="text-danger"><FontAwesomeIcon icon={faTrash} size="xs" /> Delete</Dropdown.Item>
             </DropdownButton>
-          </Card.Title>
-          <Card.Subtitle className="mb-2 text-muted">
+          </Modal.Title>
+          {/* <Modal.Subtitle className="mb-2 text-muted">
             repo : {repo}
-          </Card.Subtitle>
+          </Modal.Subtitle> */}
         {isEdit ? 
         <Form>
-        <Card.Title className='py-3'>
+        <Modal.Title className='py-3'>
         
           <Form.Group as={Row} className="mb-3" controlId="formHorizontalEmail">
             <Form.Label column sm={2}>
@@ -168,8 +176,7 @@ const handleClose = () => {
               <Form.Control type="text" value={title} onChange={e => setTitle(e.target.value)}/>
             </Col>
           </Form.Group>
-          </Card.Title>
-          <Card.Text>
+          </Modal.Title>
           <Form.Group as={Row} row={3} className="mb-3" controlId="formHorizontalEmail">
             <Form.Label column sm={2}>
               Body
@@ -178,26 +185,31 @@ const handleClose = () => {
               <Form.Control as="textarea" rows={4} value={content} onChange={e => setContent(e.target.value)} />
             </Col>
           </Form.Group>
-        </Card.Text>
         </Form>
           : 
             <>
-            <Card.Title className='py-3'>
+            <h5 className='py-3'>
               Title : {title}
-            </Card.Title>
-            <Card.Text className='py-3'>
+            </h5>
+            <p className='py-3' style={{ wordWrap: "break-word" }}>
               Body : {content}
-            </Card.Text>
+            </p>
             </>
           }
           
-          <Card.Text className='pt-3 text-secondary'>
+          <p className='pt-3 text-secondary'>
             created : {new Date(issues.created_at).toLocaleString()}
-          </Card.Text>
-          <Card.Text className='text-secondary'>
+          </p>
+          <p className='text-secondary'>
             updated : {new Date(issues.updated_at).toLocaleString()}
-          </Card.Text>
-          
+          </p>
+
+        </Modal.Body>
+}
+        <Modal.Footer>
+        <Button variant="secondary" onClick={handleClose}>
+            Close
+          </Button>
           {isEdit && 
             <Button variant="primary" onClick={e => updateData()} disabled={editLoading}>
                {editLoading &&
@@ -209,18 +221,13 @@ const handleClose = () => {
                     aria-hidden="true"
                     />
                 }
-                {"  "}確定
+                {"  "}確定修改
             </Button>}
+        </Modal.Footer>
+      </Modal>
 
-        </Card.Body>
-      </Card>
+    
 
-      {issueData && issueData.labels.map(each => {return(
-        <p>{each.name}</p>
-      )})}
-
-      </>
-      )}
      <div>
       <Modal show={modalShow} onHide={handleClose} animation={false} centered>
         <Modal.Header closeButton>
