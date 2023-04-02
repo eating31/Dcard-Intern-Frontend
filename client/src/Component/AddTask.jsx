@@ -1,28 +1,25 @@
-import React,{useEffect, useState} from 'react'
+import React,{useEffect, useState, useContext} from 'react'
 import axios from 'axios';
-import Button from 'react-bootstrap/Button';
-import Modal from 'react-bootstrap/Modal';
-import Form from 'react-bootstrap/Form';
-import Select from 'react-select';
-import Spinner from 'react-bootstrap/Spinner';
-
+import { Button, Modal, Form, Spinner} from 'react-bootstrap';
+import Select from 'react-select'
+import { Context } from '../Context/Context';
 
 function AddTask() {
-    const [modalShow, setModalShow] = useState(false)
     const [title, setTitle] = useState('')
     const [content, setContent] = useState('')
     const [selectRepo, setSelectRepo] = useState()
     const [allRepo, setAllRepo]= useState([])
     const [loading, setLoading] = useState(false)
     const [finishModal, setFinishModal] = useState(false)
+    const {isAdd, setIsAdd }= useContext(Context)
 
     const handleClose = () => {
-        setModalShow(false)
+        setIsAdd(false)
         setFinishModal(false);
     };
 
     useEffect(()=>{
-        if(modalShow){
+        if(isAdd){
             async function getUserRepo() {
                 await axios.get("https://api.github.com/user/repos", {
                     headers:{
@@ -37,7 +34,7 @@ function AddTask() {
             }
             getUserRepo()
         }
-    },[modalShow])
+    },[isAdd])
 
     async function postData(req, res) {
         const data = {
@@ -64,16 +61,20 @@ function AddTask() {
                 handleClose()
                 setLoading(false)
                 setFinishModal(true)
-                // alert('新增成功')
             }
         }else{
             alert('請輸入標題')
         }
     }
 
+function finishClose(){
+  setFinishModal(false)
+  window.location.reload()
+}
+
   return (
     <div>
-    <Button variant="primary" onClick={() => setModalShow(true)}>
+    <Button variant="primary" onClick={() => setIsAdd(true)}>
        Add
     </Button>
     
@@ -82,7 +83,7 @@ function AddTask() {
       aria-labelledby="contained-modal-title-vcenter"
       centered
       onHide={handleClose}
-      show={modalShow}
+      show={isAdd}
     >
       <Modal.Header closeButton>
         <Modal.Title id="contained-modal-title-vcenter">
@@ -133,13 +134,13 @@ function AddTask() {
       </Modal.Footer>
     </Modal>
 
-    <Modal show={finishModal} onHide={handleClose} animation={false} centered>
-        <Modal.Header closeButton>
+    <Modal show={finishModal} onHide={finishClose} animation={false} centered>
+        <Modal.Header>
           <Modal.Title>Create an issue</Modal.Title>
         </Modal.Header>
         <Modal.Body>Successfully created an issue</Modal.Body>
         <Modal.Footer>
-          <Button variant="primary" onClick={handleClose}>
+          <Button variant="primary" onClick={finishClose}>
             確定
           </Button>
         </Modal.Footer>

@@ -4,10 +4,19 @@ import {Nav, NavDropdown} from 'react-bootstrap';
 import NavbarReact from 'react-bootstrap/Navbar';
 import { Context } from "../Context/Context";
 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faPlus } from '@fortawesome/free-solid-svg-icons'
+
+import Button from 'react-bootstrap/Button';
+import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
+import Tooltip from 'react-bootstrap/Tooltip';
+
+
 function Navbar() {
 
   const [isLoggedIn, setIsLoggedIn] = useState();
   const {userName, setUserName} = useContext(Context)
+  const {isAdd, setIsAdd }= useContext(Context)
 
   const url = 'https://github.com/login/oauth/authorize?client_id=7e2ec405ab8a9a9c9528'
 console.log(process.env.REACT_APP_CLIENT_ID)
@@ -58,6 +67,20 @@ useEffect(()=>{
           {isLoggedIn ? (
             <>
             <Nav className='pe-5 d-flex align-items-center'>Hello, {userName.name}!</Nav>
+            
+        <Nav className='d-flex align-items-center'>
+      <OverlayTrigger
+          placement='bottom'
+          overlay={
+            <Tooltip>
+              Add an issue
+            </Tooltip>
+          }
+        >
+          <Button variant="white" className='border-0' onClick={e => setIsAdd(true)}><FontAwesomeIcon icon={faPlus} /> </Button>
+        </OverlayTrigger>
+          </Nav>
+            
             <NavDropdown title={<img width="40px" height="40px"  className="rounded-circle" src={userName.avatar_url} />}>
               <NavDropdown.Item>
                 Issue List
