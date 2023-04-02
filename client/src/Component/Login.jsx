@@ -12,8 +12,7 @@ function Login() {
 
     // 使用GitHub OAuth2 API授权用户并请求访问令牌
     const handleLogin = async () => {
-    const url = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=${selectedScopes.join(" ")}`;
-    console.log(url)
+    const url = `https://github.com/login/oauth/authorize?client_id=${process.env.REACT_APP_CLIENT_ID}&scope=${selectedScopes.join(" ")}`;
     window.location.assign(url);
     };
 

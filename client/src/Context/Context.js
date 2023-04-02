@@ -8,6 +8,9 @@ export const ContextProvider = (props) =>{
 
   const [detailShow, setDetailShow] = useState(false)
   const [isAdd, setIsAdd] = useState(false);
+  const [allRepo, setAllRepo] = useState([]);
+  const [repo, setRepo] = useState();
+  const [searchAll, setSearchAll] =useState(false)
 
 
 
@@ -15,7 +18,10 @@ export const ContextProvider = (props) =>{
         <Context.Provider value={{ issueData, setIssueData,
                                    userName, setUserName,
                                    detailShow, setDetailShow,
-                                   isAdd, setIsAdd
+                                   isAdd, setIsAdd,
+                                   allRepo, setAllRepo,
+                                   repo, setRepo,
+                                   searchAll, setSearchAll
                                    }}>
             {props.children}
         </Context.Provider>

@@ -10,52 +10,88 @@ import { Form, Row, Col, Card, Button, Spinner, Badge } from 'react-bootstrap';
 
 function ListTask() {
     const [labels, setLabels] = useState([ 
-            { name: "open" },
-            { name: "In progress" },
-            { name: "Done" }
+            { name: "open", isChecked: false },
+            { name: "In progress", isChecked: false },
+            { name: "Done", isChecked: false }
     ])
     const [keyword, setKeyword] = useState('')
     const [userData, setUserData] = useState({})
     const [userIssues, setUserIssues] = useState([])
     const {issueData, setIssueData} = useContext(Context)
     const {userName, setUserName} = useContext(Context)
-    
     const {detailShow, setDetailShow} = useContext(Context)
 
     const [loginLoading, setLoginLoading] = useState(false);
+    const [cardLoading, setCarfLoading] = useState(false);
 
     const [page, setPage] = useState(1);
     const [totalData, setTotalData] = useState(0)
     const [hasMore, setHasMore] = useState(true);
     const [top, setTop] = useState(0);
+    
+    const { repo, setRepo} = useContext(Context)
+    const { allRepo, setAllRepo} = useContext(Context)
+    const {searchAll, setSearchAll} =useContext(Context)
 
 
-    const [cardLoading, setCarfLoading] = useState(false);
-    // const getSingleRepoIssues = async()=>{
-    //     await axios.get("https://api.github.com/repos/eating31/"+repo+"/issues")
-    //     .then(data =>{
-    //         console.log(data.data)
-    //         setUserIssues(data.data)
+    const getSingleRepoIssues = async()=>{
+        setCarfLoading(true)
+            await axios.get(`https://api.github.com/search/issues?q=repo:${userName.login}/${repo}+is:open+sort:created`, {
+                headers:{
+                    "Authorization": 'Bearer ' + localStorage.getItem("access_token")
+                }
+             })
+            .then(data =>{
+                setUserIssues(data.data.items)
+                setTotalData(data.data.items.length)
+                setHasMore(data.data.items.length === 10);
 
-    //     })
-    // }
-
-useEffect(()=>{
-    console.log(labels)
-},[labels])
+            }).then(()=>setCarfLoading(false))
+            .catch(err=> console.log(err))
+        }
+    useEffect(()=>{
+    if(userName){
+        getSingleRepoIssues()
+    }
+    },[repo])
+   
 
     useEffect(()=>{
-        console.log(issueData)
-    },[issueData])
+        setTotalData(0)
+        setPage(1)
+    },[searchAll])
+
+
+    useEffect(()=>{
+        if(page===1){
+            searchData()
+        }
+    },[page])
+
+    useEffect(()=>{
+        getAllRepos()
+        searchData()
+    },[userName])
+
+    const getAllRepos = async()=>{
+        try{
+            await axios.get(`https://api.github.com/search/repositories?q=user:${userName.login}`, {
+                headers:{
+                    "Authorization": 'Bearer ' + localStorage.getItem("access_token")
+                }
+             })
+            .then(data =>{
+                setAllRepo(data.data.items)
+            })
+        }catch(err){
+            console.log(err)
+        }
+    }
 
     useEffect(() => {
         const querytring = window.location.search;
         const urlParams = new URLSearchParams(querytring);
-        console.log(urlParams)
         const codeParams = urlParams.get("code")
-
-        console.log(codeParams)
-
         if(codeParams &&(localStorage.getItem("access_token")===null)){
             async function getAccessToken() {
                 setLoginLoading(true);
@@ -63,7 +99,6 @@ useEffect(()=>{
                 .then(data =>{
                     if(data.data.access_token) {
                         localStorage.setItem("access_token",data.data.access_token);
-                        // setRerender(!rerender)
                     }
                 })
                 .then(()=> getUserData())
@@ -71,7 +106,6 @@ useEffect(()=>{
                 .finally(()=>  setLoginLoading(false))
             }
             getAccessToken()
-         // 底下位置要動 不然他已經做好了但還沒顯示
         }else{
             getUserData()
         }
@@ -101,44 +135,47 @@ async function getUserData(req, res) {
 async function searchData(req, res) {
     setCarfLoading(true)
     // 所有資料
-    await axios.get(`https://api.github.com/search/issues?q=user:eating31+sort:created&per_page=10&page=${page}`,{
+    try{
+    await axios.get(`https://api.github.com/search/issues?q=user:${userName.login}+is:open+sort:created&per_page=10&page=${page}`,{
         headers:{
             "Authorization": 'token ' +localStorage.getItem("access_token")
             }
     }).then(data =>{
         console.log(data.data)
         const temp = data.data.items
-        // setUserIssues(data.data.items)
-
         setUserIssues(preIssues => [...preIssues, ...temp]);
         setPage(page + 1);
         setTotalData(totalData + temp.length)
         setHasMore(temp.length === 10);
 
-
     }).then(()=> setCarfLoading(false))
-    .catch(err => console.log(err))
-    
+    }catch(err){
+        console.log(err)
+    }
 }
 
 async function handelSubmit(){
+    setCarfLoading(true)
     const selectLabel = labels.filter(e =>e.isChecked===true)
     const query = selectLabel.map((label) => `"${label.name}"`).join(',');
-    console.log(query)
+    let queryLabel=''
+    if(query !==0){
+        queryLabel='label:'+ query
+    }
+
+    console.log(queryLabel)
     // await axios.get(`https://api.github.com/search/issues?q=user:eating31+label:${query}`,{
-    await axios.get(`https://api.github.com/search/issues?q=user:eating31+${keyword}`,{
+    await axios.get(`https://api.github.com/search/issues?q=user:${userName.login}+${queryLabel}+${keyword}`,{
         headers:{
             "Authorization": 'Bearer ' +localStorage.getItem("access_token")
             }
     }).then(data =>{
         console.log(data.data)
         //const temp = data.data.items
-        // setUserIssues(data.data.items)
-
-        // setUserIssues(temp);
-    })
+        setTotalData(data.data.items.length)
+        setUserIssues(data.data.items)
+    }).then(()=>setCarfLoading(false))
     .catch(err => console.log(err))
-console.log('submit')
 }
 
 
@@ -193,24 +230,24 @@ function handleChange(e) {
     const { name, checked } = e.target;
     console.log(name)
     if (name === "allSelect") {
-      let tempUser = labels.map((user) => {
-        return { ...user, isChecked: checked };
+      let tempUser = labels.map((label) => {
+        return { ...label, isChecked: checked };
       });
       setLabels(tempUser);
     } else {
-      let tempUser = labels.map((user) =>
-        user.name === name ? { ...user, isChecked: checked } : user
+      let tempUser = labels.map((label) =>
+      label.name === name ? { ...label, isChecked: checked } : label
       );
       setLabels(tempUser);
     }
   };
 
   return (
-    <div className="container">
-        {/* <div className='col-3'>
+    <div className='row'  style={{ paddingTop: '70px' }}>
+         <div className='col-2'>
             <Siders />
         </div>
-        <div className='col-9 pe-5'> */}
+       <div className='col-9'>
       {loginLoading &&
          <div className='d-flex justify-content-center'>
             <Spinner animation="border" />
@@ -218,39 +255,26 @@ function handleChange(e) {
         }
 
         {localStorage.getItem("access_token") ?
-        <div>
-{/* test div */}
+        <div style={{ paddingLeft: '100px' }}>
             <div>
             
         <div className='bg-info p-2 px-5 mt-4 rounded-pill'>
         <Form>
       <Row className="my-1">
-        <Col className="col-12 col-lg-5 pt-2 d-flex justify-content-end">
-            <Form.Group as={Col} id="formGridCheckbox">
-            <Form.Label className="form-label pe-2">State :</Form.Label>
-                <Form.Check inline label="全選" name="allSelect" type="checkbox" checked={!labels.some((label) => label?.isChecked !== true)} onChange={handleChange} />
-                {labels.map((user, index) => (
-                    <div className="form-check" key={index}>
-                    <input
-                        type="checkbox"
-                        className="form-check-input"
-                        name={user.name}
-                        checked={user?.isChecked || false}
-                        onChange={handleChange}
-                    />
-                    <label className="form-check-label ms-2">{user.name}</label>
-                    </div>
+        <Col className="col-12 col-lg-6 pt-2 d-flex justify-content-end">
+            <Form.Group as={Col}>
+            <Form.Label className="form-label pe-2">State:</Form.Label>
+                <Form.Check inline label="全選" name="allSelect" type="checkbox" checked={!labels.some((label) => label.isChecked !== true)} onChange={handleChange} />
+                {labels.map((label, index) => (
+                     <Form.Check key={label.id} inline name={label.name} label={label.name} type="checkbox" checked={label.isChecked || false} onChange={handleChange} />
                 ))}
-                {/* <Form.Check inline label="Open" type="checkbox" />
-                <Form.Check inline label="In progress" type="checkbox" />
-                <Form.Check inline label="Done" type="checkbox" /> */}
             </Form.Group>
         </Col>
 
         <Col className="col-auto col-lg-1 pt-2 d-flex justify-content-start">
-          <Form.Label className="form-label align-self-center">search : </Form.Label>
+          <Form.Label className="form-label align-self-center">search:</Form.Label>
         </Col>
-        <Col className="col-auto col-lg-4">
+        <Col className="col-auto col-lg-3">
           <Form.Control type="text" placeholder="issue content..." value={keyword} onChange={e => setKeyword(e.target.value)} />
         </Col>
 
@@ -273,7 +297,7 @@ function handleChange(e) {
             {Object.keys(userData).length !== 0 ?
             <>
 
-              <Row xs={1} md={2} className="g-4">
+              <Row md={1} lg={2} className="g-4">
                 {/* 不確定等待圈圈是不是要放這 */}
               {cardLoading ? (
                   <div className='d-flex justify-content-center'>
@@ -325,7 +349,7 @@ function handleChange(e) {
         <Login />
     }
 
-{/* </div> */}
+</div>
 <DetailTask />
     </div>
   )

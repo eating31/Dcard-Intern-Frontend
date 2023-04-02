@@ -1,9 +1,7 @@
 import React,{useEffect, useState, useContext} from 'react'
 import axios from 'axios';
 import { Context } from "../Context/Context";
-
-import { Form, Row, Col, Card, Button, Spinner, Dropdown, DropdownButton, Modal } from 'react-bootstrap';
-
+import { Form, Row, Col, Spinner, Button, Dropdown, DropdownButton, Modal } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPenToSquare, faTrash,faSquare, faEllipsisVertical } from '@fortawesome/free-solid-svg-icons'
 
@@ -20,12 +18,11 @@ function DetailTask() {
   const [issues, setIssues] = useState([])
 
   const [modalShow, setModalShow] = useState(false)
+  const [deleteModalShow, setDeleteModalShow] = useState(false)
+  const [deleteSuccessShow, setDeleteSuccessShow] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
   const {detailShow, setDetailShow} = useContext(Context)
   const {issueData, setIssueData} = useContext(Context)
-
-  useEffect(()=>{
-    console.log(repo)
-  },[repo])
 
 useEffect(()=>{
    if(issueData){
@@ -60,7 +57,7 @@ async function updateState(){
 
   await axios.patch(LabelUrl, data ,{
     headers:{
-          "Authorization": "bearer " + process.env.REACT_APP_GITHUB_TOKEN
+          "Authorization": "bearer " + localStorage.getItem("access_token")
     }}).then(data => console.log(data))
     .catch(err => console.log(err))
 
@@ -82,7 +79,6 @@ async function getIssue(){
       setTitle(data.data.title)
       setIssues(data.data)
     }).catch(err => console.log(err))
-  //什麼意思？？？
   setIssueData(issueData);
   setLoading(false)
 }
@@ -96,7 +92,7 @@ async function getIssue(){
     console.log(data)
       await axios.patch(issueData.url, data, {
       headers:{
-            "Authorization": "bearer " + process.env.REACT_APP_GITHUB_TOKEN
+            "Authorization": "bearer " + localStorage.getItem("access_token")
             }
     }).then(() =>{
       getIssue()
@@ -109,14 +105,19 @@ async function getIssue(){
 }
 
 async function deleteData() {
+  setDeleteLoading(true)
     const data = {
         "state":"closed",
     }
    await axios.patch(issueData.url, data, {
         headers:{
-            "Authorization": "bearer " + process.env.REACT_APP_GITHUB_TOKEN
+            "Authorization": "bearer " + localStorage.getItem("access_token")
             }
-    }).then(data =>console.log(data))
+    }).then(() =>{
+      setDeleteModalShow(false)
+      setDeleteSuccessShow(true)
+      setDeleteLoading(false)
+    })
     .catch(err => console.log(err))
 }
 
@@ -129,6 +130,12 @@ const handleClose = () => {
   setDetailShow(false)
 };
 
+const handleDeleteClose = () =>{
+  setModalShow(false)
+  setDetailShow(false)
+  setDeleteSuccessShow(false)
+  window.location.reload()
+}
   return (
     <div className='container'> 
     <Modal show={detailShow} onHide={handleClose} animation={false} size="lg" centered>
@@ -143,27 +150,22 @@ const handleClose = () => {
         <Modal.Body className='px-5'>
         <Modal.Title className='row'>
             <DropdownButton
-              className='col'
-                drop="end"
+              className='col custom-dropdown-button'
                 variant="white"
-                // title={issueData.labels[0].name}
-                title="open"
+                title={issueData.labels[0].name}
               >
               <Dropdown.Item eventKey="1" onClick={e => setStatus('open')} className='text-secondary'><FontAwesomeIcon icon={faSquare} size="2xs" /> open</Dropdown.Item>
               <Dropdown.Item eventKey="2" onClick={e => setStatus('In%20progress')} className='text-danger'> <FontAwesomeIcon icon={faSquare} size="2xs" /> In progress</Dropdown.Item>
               <Dropdown.Item eventKey="3" onClick={e => setStatus('Done')} className='text-success'><FontAwesomeIcon icon={faSquare} size="2xs" /> Done</Dropdown.Item>
             </DropdownButton>
-            <DropdownButton 
-              className="col d-flex justify-content-end" 
+            <DropdownButton
+              className="col d-flex justify-content-end custom-dropdown-button"
               variant="white"
               title={icon()}>
               <Dropdown.Item onClick={e => setIsEdit(true)} className="text-secondary"><FontAwesomeIcon icon={faPenToSquare} size="xs" /> Edit</Dropdown.Item>
-              <Dropdown.Item onClick={e => deleteData(e)} className="text-danger"><FontAwesomeIcon icon={faTrash} size="xs" /> Delete</Dropdown.Item>
+              <Dropdown.Item onClick={e => setDeleteModalShow(true)} className="text-danger"><FontAwesomeIcon icon={faTrash} size="xs" /> Delete</Dropdown.Item>
             </DropdownButton>
           </Modal.Title>
-          {/* <Modal.Subtitle className="mb-2 text-muted">
-            repo : {repo}
-          </Modal.Subtitle> */}
         {isEdit ? 
         <Form>
         <Modal.Title className='py-3'>
@@ -196,13 +198,9 @@ const handleClose = () => {
             </p>
             </>
           }
-          
-          <p className='pt-3 text-secondary'>
-            created : {new Date(issues.created_at).toLocaleString()}
-          </p>
-          <p className='text-secondary'>
-            updated : {new Date(issues.updated_at).toLocaleString()}
-          </p>
+          <p className="mb-2 text-muted"> repo : {repo} </p>
+          <p className='pt-3 text-secondary'> created : {new Date(issues.created_at).toLocaleString()}</p>
+          <p className='text-secondary'>updated : {new Date(issues.updated_at).toLocaleString()}</p>
 
         </Modal.Body>
 }
@@ -227,8 +225,6 @@ const handleClose = () => {
       </Modal>
 
     
-
-     <div>
       <Modal show={modalShow} onHide={handleClose} animation={false} centered>
         <Modal.Header closeButton>
           <Modal.Title>Updated an issue</Modal.Title>
@@ -240,7 +236,42 @@ const handleClose = () => {
           </Button>
         </Modal.Footer>
       </Modal>
-      </div>
+
+
+      <Modal show={deleteModalShow} onHide={e => setDeleteModalShow(false)} animation={false} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Delete an issue</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>請問您確定要刪除這個issue嗎？</Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={e => setDeleteModalShow(false)}>
+            取消
+          </Button>
+          <Button variant="danger" onClick={e => deleteData(e)} disabled={deleteLoading}>
+          {deleteLoading &&
+                <Spinner
+                    as="span"
+                    animation="border"
+                    size="sm"
+                    role="status"
+                    aria-hidden="true"
+                    />
+                }
+                {"  "}刪除
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={deleteSuccessShow} onHide={handleDeleteClose} centere>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            Deleted an issue
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          刪除成功!
+        </Modal.Body>
+      </Modal>
     </div>
   )
 }

@@ -19,10 +19,10 @@ function Navbar() {
   const {isAdd, setIsAdd }= useContext(Context)
 
   const url = 'https://github.com/login/oauth/authorize?client_id=7e2ec405ab8a9a9c9528'
-console.log(process.env.REACT_APP_CLIENT_ID)
+
+  console.log(userName)
 
 useEffect(()=>{
-
   setTimeout(()=>{
     if(localStorage.getItem("access_token") === null){
       setIsLoggedIn(false)
@@ -39,7 +39,7 @@ useEffect(()=>{
     if(eventKey === '3'){
       setIsLoggedIn(true)
       // window.location.assign('https://github.com/login/oauth/authorize?client_id=7e2ec405ab8a9a9c9528')
-    }else{
+    }else if (eventKey === '2'){
       setIsLoggedIn(false)
       localStorage.removeItem("access_token")
       const currentUrl = window.location.href;
@@ -58,7 +58,7 @@ useEffect(()=>{
 
 
   return (
-    <NavbarReact bg="light" expand="lg">
+    <NavbarReact bg="light" fixed="top">
     <Container>
       <NavbarReact.Brand href="/">Dcard-Intern</NavbarReact.Brand>
       <NavbarReact.Toggle aria-controls="basic-navbar-nav" />
@@ -66,24 +66,24 @@ useEffect(()=>{
         <Nav className="ms-auto" onSelect={handleSelect}>
           {isLoggedIn ? (
             <>
-            <Nav className='pe-5 d-flex align-items-center'>Hello, {userName.name}!</Nav>
+            <Nav className='pe-3 d-flex align-items-center'>Hello, {userName.name}!</Nav>
             
         <Nav className='d-flex align-items-center'>
-      <OverlayTrigger
-          placement='bottom'
-          overlay={
-            <Tooltip>
-              Add an issue
-            </Tooltip>
-          }
-        >
-          <Button variant="white" className='border-0' onClick={e => setIsAdd(true)}><FontAwesomeIcon icon={faPlus} /> </Button>
-        </OverlayTrigger>
+          <OverlayTrigger
+              placement='bottom'
+              overlay={
+                <Tooltip>
+                  Add an issue
+                </Tooltip>
+              }
+            >
+              <Button variant="white" className='border-0' onClick={e => setIsAdd(true)}><FontAwesomeIcon icon={faPlus} /> </Button>
+            </OverlayTrigger>
           </Nav>
             
             <NavDropdown title={<img width="40px" height="40px"  className="rounded-circle" src={userName.avatar_url} />}>
-              <NavDropdown.Item>
-                Issue List
+              <NavDropdown.Item eventKey="1" href={userName.html_url} target="_black">
+                Profile
               </NavDropdown.Item>
               <NavDropdown.Divider />
               <NavDropdown.Item eventKey="2" href="#link">
