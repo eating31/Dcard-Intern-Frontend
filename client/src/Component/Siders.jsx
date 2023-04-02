@@ -10,7 +10,7 @@ function Siders() {
 
   return (
     <div style={{ display: 'flex', height: '100vh', width:'200px', overflow: 'scroll', position: 'fixed' }}>
-       <Accordion flush style={{ width:'200px' }}>
+       <Accordion flush style={{ width:'200px' }} defaultActiveKey="1">
       <Accordion.Item eventKey="0">
         <Accordion.Header variant="link" onClick={e => setSearchAll(!searchAll)}>All Issues</Accordion.Header>
       </Accordion.Item>
@@ -18,7 +18,7 @@ function Siders() {
         <Accordion.Header>Repo</Accordion.Header>
         <Accordion.Body>
           {allRepo.length >0 &&
-        <ListGroup variant="flush">
+        <ListGroup variant="flush" eventKey="1">
           {allRepo.map((repo,index) => 
             <ListGroup.Item action onClick={e => setRepo(repo.name) } key={index}>
             {repo.name}

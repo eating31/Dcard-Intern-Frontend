@@ -34,60 +34,6 @@ function ListTask() {
     const {searchAll, setSearchAll} =useContext(Context)
 
 
-    const getSingleRepoIssues = async()=>{
-        setCarfLoading(true)
-            await axios.get(`https://api.github.com/search/issues?q=repo:${userName.login}/${repo}+is:open+sort:created`, {
-                headers:{
-                    "Authorization": 'Bearer ' + localStorage.getItem("access_token")
-                }
-             })
-            .then(data =>{
-                setUserIssues(data.data.items)
-                setTotalData(data.data.items.length)
-                setHasMore(data.data.items.length === 10);
-
-            }).then(()=>setCarfLoading(false))
-            .catch(err=> console.log(err))
-        }
-    useEffect(()=>{
-    if(userName){
-        getSingleRepoIssues()
-    }
-    },[repo])
-   
-
-    useEffect(()=>{
-        setTotalData(0)
-        setPage(1)
-    },[searchAll])
-
-
-    useEffect(()=>{
-        if(page===1){
-            searchData()
-        }
-    },[page])
-
-    useEffect(()=>{
-        getAllRepos()
-        searchData()
-    },[userName])
-
-    const getAllRepos = async()=>{
-        try{
-            await axios.get(`https://api.github.com/search/repositories?q=user:${userName.login}`, {
-                headers:{
-                    "Authorization": 'Bearer ' + localStorage.getItem("access_token")
-                }
-             })
-            .then(data =>{
-                setAllRepo(data.data.items)
-            })
-        }catch(err){
-            console.log(err)
-        }
-    }
-
     useEffect(() => {
         const querytring = window.location.search;
         const urlParams = new URLSearchParams(querytring);
@@ -111,7 +57,59 @@ function ListTask() {
         }
 
     },[])
+
+    useEffect(()=>{
+        setTotalData(0)
+        setPage(1)
+    },[searchAll])
+
+    useEffect(()=>{
+        if(page===1){
+            searchData()
+        }
+    },[page])
+
+    useEffect(()=>{
+        const getAllRepos = async()=>{
+            try{
+                await axios.get(`https://api.github.com/search/repositories?q=user:${userName.login}`, {
+                    headers:{
+                        "Authorization": 'Bearer ' + localStorage.getItem("access_token")
+                    }
+                 })
+                .then(data =>{
+                    setAllRepo(data.data.items)
+                })
+            }catch(err){
+                console.log(err)
+            }
+        }
+
+        getAllRepos()
+        searchData()
+    },[userName])
+
+    
  
+    useEffect(()=>{
+        const getSingleRepoIssues = async()=>{
+            setCarfLoading(true)
+                await axios.get(`https://api.github.com/search/issues?q=repo:${userName.login}/${repo}+is:open+sort:created`, {
+                    headers:{
+                        "Authorization": 'Bearer ' + localStorage.getItem("access_token")
+                    }
+                 })
+                .then(data =>{
+                    setUserIssues(data.data.items)
+                    setTotalData(data.data.items.length)
+                    setHasMore(data.data.items.length === 10);
+    
+                }).then(()=>setCarfLoading(false))
+                .catch(err=> console.log(err))
+            }
+        getSingleRepoIssues()
+    },[repo])    
+
 async function getUserData(req, res) {
     await axios.get('https://api.github.com/user', {
         headers:{
@@ -124,12 +122,10 @@ async function getUserData(req, res) {
       }).catch(err =>console.log(err))
  }
 
- async function Detail(e, content) {
+async function Detail(e, content) {
     e.preventDefault();
-    console.log(content)
     setIssueData(content);
     setDetailShow(true)
-
 }
 
 async function searchData(req, res) {
@@ -158,26 +154,24 @@ async function handelSubmit(){
     setCarfLoading(true)
     const selectLabel = labels.filter(e =>e.isChecked===true)
     const query = selectLabel.map((label) => `"${label.name}"`).join(',');
-    let queryLabel=''
-    if(query !==0){
-        queryLabel='label:'+ query
+    console.log(selectLabel)
+    let url=''
+    if(selectLabel.length === 0){
+        url=`https://api.github.com/search/issues?q=user:${userName.login}+${keyword}`
+    }else{
+        url=`https://api.github.com/search/issues?q=user:${userName.login}+label:${query}+${keyword}`
     }
 
-    console.log(queryLabel)
-    // await axios.get(`https://api.github.com/search/issues?q=user:eating31+label:${query}`,{
-    await axios.get(`https://api.github.com/search/issues?q=user:${userName.login}+${queryLabel}+${keyword}`,{
+    await axios.get(url,{
         headers:{
             "Authorization": 'Bearer ' +localStorage.getItem("access_token")
             }
     }).then(data =>{
-        console.log(data.data)
-        //const temp = data.data.items
         setTotalData(data.data.items.length)
         setUserIssues(data.data.items)
     }).then(()=>setCarfLoading(false))
     .catch(err => console.log(err))
 }
-
 
 
 const Bg = (color) =>{
