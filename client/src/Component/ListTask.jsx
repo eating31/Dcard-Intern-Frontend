@@ -2,7 +2,6 @@ import React,{useEffect, useState, useContext, useRef} from 'react'
 import { Context } from "../Context/Context";
 import axios from 'axios';
 import AddTask from './AddTask';
-// import { useNavigate } from 'react-router-dom';
 
 import DetailTask from './DetailTask';
 import Login from './Login';
@@ -10,22 +9,26 @@ import Siders from './Siders'
 import { Form, Row, Col, Card, Button, Spinner, Badge } from 'react-bootstrap';
 
 function ListTask() {
+    const [labels, setLabels] = useState([ 
+            { name: "open" },
+            { name: "In progress" },
+            { name: "Done" }
+    ])
+    const [keyword, setKeyword] = useState('')
     const [userData, setUserData] = useState({})
     const [userIssues, setUserIssues] = useState([])
     const {issueData, setIssueData} = useContext(Context)
     const {userName, setUserName} = useContext(Context)
-    // const history = useNavigate()
     
     const {detailShow, setDetailShow} = useContext(Context)
 
     const [loginLoading, setLoginLoading] = useState(false);
 
     const [page, setPage] = useState(1);
+    const [totalData, setTotalData] = useState(0)
     const [hasMore, setHasMore] = useState(true);
     const [top, setTop] = useState(0);
 
-
-    const [test, setTest] = useState(false)
 
     const [cardLoading, setCarfLoading] = useState(false);
     // const getSingleRepoIssues = async()=>{
@@ -34,9 +37,12 @@ function ListTask() {
     //         console.log(data.data)
     //         setUserIssues(data.data)
 
-
     //     })
     // }
+
+useEffect(()=>{
+    console.log(labels)
+},[labels])
 
     useEffect(()=>{
         console.log(issueData)
@@ -95,7 +101,7 @@ async function getUserData(req, res) {
 async function searchData(req, res) {
     setCarfLoading(true)
     // 所有資料
-    await axios.get(`https://api.github.com/search/issues?q=user:eating31+sort:created&per_page=12&page=${page}`,{
+    await axios.get(`https://api.github.com/search/issues?q=user:eating31+sort:created&per_page=10&page=${page}`,{
         headers:{
             "Authorization": 'token ' +localStorage.getItem("access_token")
             }
@@ -106,7 +112,8 @@ async function searchData(req, res) {
 
         setUserIssues(preIssues => [...preIssues, ...temp]);
         setPage(page + 1);
-        setHasMore(temp.length === 12);
+        setTotalData(totalData + temp.length)
+        setHasMore(temp.length === 10);
 
 
     }).then(()=> setCarfLoading(false))
@@ -114,7 +121,23 @@ async function searchData(req, res) {
     
 }
 
-function handelSubmit(){
+async function handelSubmit(){
+    const selectLabel = labels.filter(e =>e.isChecked===true)
+    const query = selectLabel.map((label) => `"${label.name}"`).join(',');
+    console.log(query)
+    // await axios.get(`https://api.github.com/search/issues?q=user:eating31+label:${query}`,{
+    await axios.get(`https://api.github.com/search/issues?q=user:eating31+${keyword}`,{
+        headers:{
+            "Authorization": 'Bearer ' +localStorage.getItem("access_token")
+            }
+    }).then(data =>{
+        console.log(data.data)
+        //const temp = data.data.items
+        // setUserIssues(data.data.items)
+
+        // setUserIssues(temp);
+    })
+    .catch(err => console.log(err))
 console.log('submit')
 }
 
@@ -156,10 +179,6 @@ useEffect(() => {
 
 const scrollablePageHeight = document.documentElement.scrollHeight -  window.innerHeight;
 
-useEffect(()=>{
-console.log(hasMore)
-},[hasMore])
-
 useEffect(() => {
   if (top >= scrollablePageHeight-30) {
     console.log('iii')
@@ -169,16 +188,29 @@ useEffect(() => {
   }
 }, [top]);
 
-const handleClose = () => {
-  setTest(false)
-};
+function handleChange(e) {
+  
+    const { name, checked } = e.target;
+    console.log(name)
+    if (name === "allSelect") {
+      let tempUser = labels.map((user) => {
+        return { ...user, isChecked: checked };
+      });
+      setLabels(tempUser);
+    } else {
+      let tempUser = labels.map((user) =>
+        user.name === name ? { ...user, isChecked: checked } : user
+      );
+      setLabels(tempUser);
+    }
+  };
 
   return (
-    <div className="row">
-        <div className='col-3'>
+    <div className="container">
+        {/* <div className='col-3'>
             <Siders />
         </div>
-        <div className='col-9 pe-5'>
+        <div className='col-9 pe-5'> */}
       {loginLoading &&
          <div className='d-flex justify-content-center'>
             <Spinner animation="border" />
@@ -189,37 +221,53 @@ const handleClose = () => {
         <div>
 {/* test div */}
             <div>
-
-        <div className='bg-info rounded-pill'>
-        <Form className='px-5 py-2'>
-      <Row className="mb-3">
-        <Form.Group as={Col} className="mb-3" id="formGridCheckbox">
-            <Form.Check inline label="全選" type="checkbox" />
-            <Form.Check inline label="Open" type="checkbox" />
-            <Form.Check inline label="In progress" type="checkbox" />
-            <Form.Check inline label="Done" type="checkbox" />
-        </Form.Group>
-
-        <Form.Group as={Col}  className="mb-3" controlId="formHorizontalEmail">
-        <Form.Label column sm={2}>
-          search
-        </Form.Label>
-        <Col sm={10}>
-          <Form.Control type="email" placeholder="issue name..." />
+            
+        <div className='bg-info p-2 px-5 mt-4 rounded-pill'>
+        <Form>
+      <Row className="my-1">
+        <Col className="col-12 col-lg-5 pt-2 d-flex justify-content-end">
+            <Form.Group as={Col} id="formGridCheckbox">
+            <Form.Label className="form-label pe-2">State :</Form.Label>
+                <Form.Check inline label="全選" name="allSelect" type="checkbox" checked={!labels.some((label) => label?.isChecked !== true)} onChange={handleChange} />
+                {labels.map((user, index) => (
+                    <div className="form-check" key={index}>
+                    <input
+                        type="checkbox"
+                        className="form-check-input"
+                        name={user.name}
+                        checked={user?.isChecked || false}
+                        onChange={handleChange}
+                    />
+                    <label className="form-check-label ms-2">{user.name}</label>
+                    </div>
+                ))}
+                {/* <Form.Check inline label="Open" type="checkbox" />
+                <Form.Check inline label="In progress" type="checkbox" />
+                <Form.Check inline label="Done" type="checkbox" /> */}
+            </Form.Group>
         </Col>
-      </Form.Group>
 
-      <Form.Group as={Col} className="d-flex justify-content-end">
-        <Button className="btn" variant="primary" onClick={handelSubmit}>
-        Submit
-      </Button>
-      </Form.Group>
+        <Col className="col-auto col-lg-1 pt-2 d-flex justify-content-start">
+          <Form.Label className="form-label align-self-center">search : </Form.Label>
+        </Col>
+        <Col className="col-auto col-lg-4">
+          <Form.Control type="text" placeholder="issue content..." value={keyword} onChange={e => setKeyword(e.target.value)} />
+        </Col>
+
+        <Col className="col-12 col-lg-2 d-flex justify-content-end">
+          <Button type="button" className="btn btn-dark rounded-pill" onClick={handelSubmit}>Search</Button>
+        </Col>
 
       </Row>
     </Form>
         </div>
-        <div className="p-4 d-flex justify-content-end">
-        <AddTask />
+        <div className="py-3 d-flex justify-content-between">
+            <div>
+                共有{totalData}筆資料
+            </div>
+            <div>
+            <AddTask />
+            </div>
         </div>
 
             {Object.keys(userData).length !== 0 ?
@@ -277,7 +325,7 @@ const handleClose = () => {
         <Login />
     }
 
-</div>
+{/* </div> */}
 <DetailTask />
     </div>
   )
