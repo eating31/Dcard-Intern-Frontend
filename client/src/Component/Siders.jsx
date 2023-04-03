@@ -1,5 +1,5 @@
-import React,{useEffect, useState, useContext} from 'react'
-import { Accordion, Card, Button,NavDropdown, ListGroup, DropdownButton, Dropdown } from 'react-bootstrap';
+import React,{useContext} from 'react'
+import { Accordion, ListGroup } from 'react-bootstrap';
 import { Context } from "../Context/Context";
 
 function Siders() {
@@ -18,7 +18,7 @@ function Siders() {
         <Accordion.Header>Repo</Accordion.Header>
         <Accordion.Body>
           {allRepo.length >0 &&
-        <ListGroup variant="flush" eventKey="1">
+        <ListGroup variant="flush">
           {allRepo.map((repo,index) => 
             <ListGroup.Item action onClick={e => setRepo(repo.name) } key={index}>
             {repo.name}

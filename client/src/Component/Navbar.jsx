@@ -1,45 +1,30 @@
 import React, { useState, useEffect, useContext } from 'react'
-import Container from 'react-bootstrap/Container';
-import {Nav, NavDropdown} from 'react-bootstrap';
+import {Container, Nav, NavDropdown, Button, OverlayTrigger, Tooltip} from 'react-bootstrap';
 import NavbarReact from 'react-bootstrap/Navbar';
 import { Context } from "../Context/Context";
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPlus } from '@fortawesome/free-solid-svg-icons'
 
-import Button from 'react-bootstrap/Button';
-import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
-import Tooltip from 'react-bootstrap/Tooltip';
-
-
 function Navbar() {
 
   const [isLoggedIn, setIsLoggedIn] = useState();
-  const {userName, setUserName} = useContext(Context)
   const {isAdd, setIsAdd }= useContext(Context)
 
-  const url = 'https://github.com/login/oauth/authorize?client_id=7e2ec405ab8a9a9c9528'
-
-  console.log(userName)
 
 useEffect(()=>{
-  setTimeout(()=>{
-    if(localStorage.getItem("access_token") === null){
-      setIsLoggedIn(false)
-      console.log('logout')
-     }else{
-      console.log('login')
-      setIsLoggedIn(true)
-     }
-  },1000)
+  if(localStorage.getItem("access_token") === null){
+    setIsLoggedIn(false)
+    console.log('logout')
+   }else{
+    console.log('login')
+    setIsLoggedIn(true)
+   }
 
 },[])
 
-  function handleSelect(eventKey){
-    if(eventKey === '3'){
-      setIsLoggedIn(true)
-      // window.location.assign('https://github.com/login/oauth/authorize?client_id=7e2ec405ab8a9a9c9528')
-    }else if (eventKey === '2'){
+  function handleSelect(Key){
+   if (Key === '2'){
       setIsLoggedIn(false)
       localStorage.removeItem("access_token")
       const currentUrl = window.location.href;
@@ -51,9 +36,7 @@ useEffect(()=>{
       setTimeout(() => {
         window.location.replace(newUrl);
       }, 500);
-
     }
-    console.log(eventKey)
   }
 
 
@@ -66,33 +49,32 @@ useEffect(()=>{
         <Nav className="ms-auto" onSelect={handleSelect}>
           {isLoggedIn ? (
             <>
-            <Nav className='pe-3 d-flex align-items-center'>Hello, {userName.name}!</Nav>
+            <Nav className='pe-3 d-flex align-items-center'>Hello, {localStorage.getItem("user_name")}!</Nav>
+            <Nav className='d-flex align-items-center'>
+              <OverlayTrigger
+                  placement='bottom'
+                  overlay={
+                    <Tooltip>
+                      Add an issue
+                    </Tooltip>
+                  }
+                >
+                  <Button variant="white" className='border-0' onClick={e => setIsAdd(true)}><FontAwesomeIcon icon={faPlus} /> </Button>
+                </OverlayTrigger>
+              </Nav>
             
-        <Nav className='d-flex align-items-center'>
-          <OverlayTrigger
-              placement='bottom'
-              overlay={
-                <Tooltip>
-                  Add an issue
-                </Tooltip>
-              }
-            >
-              <Button variant="white" className='border-0' onClick={e => setIsAdd(true)}><FontAwesomeIcon icon={faPlus} /> </Button>
-            </OverlayTrigger>
-          </Nav>
-            
-            <NavDropdown title={<img width="40px" height="40px"  className="rounded-circle" src={userName.avatar_url} />}>
-              <NavDropdown.Item eventKey="1" href={userName.html_url} target="_black">
-                Profile
-              </NavDropdown.Item>
-              <NavDropdown.Divider />
-              <NavDropdown.Item eventKey="2" href="#link">
-                Logout
-              </NavDropdown.Item>
-            </NavDropdown>
+              <NavDropdown title={<img width="40px" height="40px"  className="rounded-circle" src={localStorage.getItem("avatar_url")} />}>
+                <NavDropdown.Item eventKey="1" href={localStorage.getItem("html_url")} target="_black">
+                  Profile
+                </NavDropdown.Item>
+                <NavDropdown.Divider />
+                <NavDropdown.Item eventKey="2" href="#link">
+                  Logout
+                </NavDropdown.Item>
+              </NavDropdown>
             </>
           ) : (
-            <Nav.Link eventKey="3" href={url} >Login</Nav.Link>
+            <Nav.Link eventKey="3" href="/" >Login</Nav.Link>
           )}
         </Nav>
       </NavbarReact.Collapse>

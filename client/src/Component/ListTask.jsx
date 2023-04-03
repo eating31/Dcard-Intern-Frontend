@@ -1,31 +1,26 @@
 import React,{useEffect, useState, useContext, useRef} from 'react'
 import { Context } from "../Context/Context";
 import axios from 'axios';
-import AddTask from './AddTask';
 
+import AddTask from './AddTask';
 import DetailTask from './DetailTask';
 import Login from './Login';
 import Siders from './Siders'
-import { Form, Row, Col, Card, Button, Spinner, Badge } from 'react-bootstrap';
+import SearchBar from './SearchBar';
+
+import { Row, Col, Card, Spinner, Badge } from 'react-bootstrap';
 
 function ListTask() {
-    const [labels, setLabels] = useState([ 
-            { name: "open", isChecked: false },
-            { name: "In progress", isChecked: false },
-            { name: "Done", isChecked: false }
-    ])
-    const [keyword, setKeyword] = useState('')
-    const [userData, setUserData] = useState({})
-    const [userIssues, setUserIssues] = useState([])
     const {issueData, setIssueData} = useContext(Context)
     const {userName, setUserName} = useContext(Context)
     const {detailShow, setDetailShow} = useContext(Context)
 
     const [loginLoading, setLoginLoading] = useState(false);
-    const [cardLoading, setCarfLoading] = useState(false);
+    const {cardLoading, setCarfLoading} = useContext(Context)
 
     const [page, setPage] = useState(1);
-    const [totalData, setTotalData] = useState(0)
+    const {totalData, setTotalData} = useContext(Context)
+
     const [hasMore, setHasMore] = useState(true);
     const [top, setTop] = useState(0);
     
@@ -33,6 +28,9 @@ function ListTask() {
     const { allRepo, setAllRepo} = useContext(Context)
     const {searchAll, setSearchAll} =useContext(Context)
 
+    const {allIssue, setAllIssue} = useContext(Context)
+
+    const [clickedLinks, setClickedLinks] = useState([]);
 
     useEffect(() => {
         const querytring = window.location.search;
@@ -84,7 +82,6 @@ function ListTask() {
                 console.log(err)
             }
         }
-
         getAllRepos()
         searchData()
     },[userName])
@@ -100,14 +97,16 @@ function ListTask() {
                     }
                  })
                 .then(data =>{
-                    setUserIssues(data.data.items)
+                    setAllIssue(data.data.items)
                     setTotalData(data.data.items.length)
                     setHasMore(data.data.items.length === 10);
     
                 }).then(()=>setCarfLoading(false))
                 .catch(err=> console.log(err))
             }
-        getSingleRepoIssues()
+        if(repo){
+            getSingleRepoIssues()
+        }    
     },[repo])    
 
 async function getUserData(req, res) {
@@ -118,7 +117,9 @@ async function getUserData(req, res) {
      })
      .then((data) => {
         setUserName(data.data)
-        setUserData(data.data)
+        localStorage.setItem("user_name",data.data.name);
+        localStorage.setItem("avatar_url",data.data.avatar_url);
+        localStorage.setItem("html_url",data.data.html_url);
       }).catch(err =>console.log(err))
  }
 
@@ -126,53 +127,29 @@ async function Detail(e, content) {
     e.preventDefault();
     setIssueData(content);
     setDetailShow(true)
+    setClickedLinks([...clickedLinks, content.id])
 }
 
 async function searchData(req, res) {
     setCarfLoading(true)
     // 所有資料
     try{
-    await axios.get(`https://api.github.com/search/issues?q=user:${userName.login}+is:open+sort:created&per_page=10&page=${page}`,{
-        headers:{
-            "Authorization": 'token ' +localStorage.getItem("access_token")
-            }
-    }).then(data =>{
-        console.log(data.data)
-        const temp = data.data.items
-        setUserIssues(preIssues => [...preIssues, ...temp]);
-        setPage(page + 1);
-        setTotalData(totalData + temp.length)
-        setHasMore(temp.length === 10);
-
-    }).then(()=> setCarfLoading(false))
+        await axios.get(`https://api.github.com/search/issues?q=user:${userName.login}+is:open+sort:created&per_page=10&page=${page}`,{
+            headers:{
+                "Authorization": 'token ' +localStorage.getItem("access_token")
+                }
+        }).then(data =>{
+            console.log(data.data)
+            const temp = data.data.items
+            setAllIssue(preIssues => [...preIssues, ...temp]);
+            setPage(page + 1);
+            setTotalData(totalData + temp.length)
+            setHasMore(temp.length === 10);
+        }).then(()=> setCarfLoading(false))
     }catch(err){
         console.log(err)
     }
 }
-
-async function handelSubmit(){
-    setCarfLoading(true)
-    const selectLabel = labels.filter(e =>e.isChecked===true)
-    const query = selectLabel.map((label) => `"${label.name}"`).join(',');
-    console.log(selectLabel)
-    let url=''
-    if(selectLabel.length === 0){
-        url=`https://api.github.com/search/issues?q=user:${userName.login}+${keyword}`
-    }else{
-        url=`https://api.github.com/search/issues?q=user:${userName.login}+label:${query}+${keyword}`
-    }
-
-    await axios.get(url,{
-        headers:{
-            "Authorization": 'Bearer ' +localStorage.getItem("access_token")
-            }
-    }).then(data =>{
-        setTotalData(data.data.items.length)
-        setUserIssues(data.data.items)
-    }).then(()=>setCarfLoading(false))
-    .catch(err => console.log(err))
-}
-
 
 const Bg = (color) =>{
     if(color === '198754'){
@@ -219,22 +196,7 @@ useEffect(() => {
   }
 }, [top]);
 
-function handleChange(e) {
-  
-    const { name, checked } = e.target;
-    console.log(name)
-    if (name === "allSelect") {
-      let tempUser = labels.map((label) => {
-        return { ...label, isChecked: checked };
-      });
-      setLabels(tempUser);
-    } else {
-      let tempUser = labels.map((label) =>
-      label.name === name ? { ...label, isChecked: checked } : label
-      );
-      setLabels(tempUser);
-    }
-  };
+const isClicked = (issue) => clickedLinks.includes(issue.id)
 
   return (
     <div className='row'  style={{ paddingTop: '70px' }}>
@@ -251,61 +213,31 @@ function handleChange(e) {
         {localStorage.getItem("access_token") ?
         <div style={{ paddingLeft: '100px' }}>
             <div>
-            
-        <div className='bg-info p-2 px-5 mt-4 rounded-pill'>
-        <Form>
-      <Row className="my-1">
-        <Col className="col-12 col-lg-6 pt-2 d-flex justify-content-end">
-            <Form.Group as={Col}>
-            <Form.Label className="form-label pe-2">State:</Form.Label>
-                <Form.Check inline label="全選" name="allSelect" type="checkbox" checked={!labels.some((label) => label.isChecked !== true)} onChange={handleChange} />
-                {labels.map((label, index) => (
-                     <Form.Check key={label.id} inline name={label.name} label={label.name} type="checkbox" checked={label.isChecked || false} onChange={handleChange} />
-                ))}
-            </Form.Group>
-        </Col>
+                <SearchBar />
 
-        <Col className="col-auto col-lg-1 pt-2 d-flex justify-content-start">
-          <Form.Label className="form-label align-self-center">search:</Form.Label>
-        </Col>
-        <Col className="col-auto col-lg-3">
-          <Form.Control type="text" placeholder="issue content..." value={keyword} onChange={e => setKeyword(e.target.value)} />
-        </Col>
-
-        <Col className="col-12 col-lg-2 d-flex justify-content-end">
-          <Button type="button" className="btn btn-dark rounded-pill" onClick={handelSubmit}>Search</Button>
-        </Col>
-
-      </Row>
-    </Form>
-        </div>
         <div className="py-3 d-flex justify-content-between">
             <div>
                 共有{totalData}筆資料
             </div>
             <div>
-            <AddTask />
+                <AddTask />
             </div>
         </div>
-
-            {Object.keys(userData).length !== 0 ?
-            <>
-
+        
               <Row md={1} lg={2} className="g-4">
-                {/* 不確定等待圈圈是不是要放這 */}
               {cardLoading ? (
                   <div className='d-flex justify-content-center'>
                      <Spinner animation="border" />
                   </div>
                 ) : (
                     <>
-              {userIssues.length !== 0 && userIssues.map(each => {
+              {allIssue.length !== 0 && allIssue.map((each, index) => {
                 const a = TimeDiff(each.created_at)
 
                 return(
-                    <a href='#' className="text-decoration-none text-dark" onClick={e=>Detail(e, each)}>
+                    <a href='#' className='text-decoration-none' onClick={e=>Detail(e, each)} key={index}  style={{ color: isClicked(each) ? 'gray' : 'black' }}>
                         <Col>
-                        <Card key={each.id}>
+                        <Card>
                             <Card.Body>
                             <Card.Subtitle className="mb-2 text-muted">
                                 <Badge pill bg={Bg(each.labels[0].color)}>{each.labels[0].name}</Badge>
@@ -330,13 +262,7 @@ function handleChange(e) {
                 </div>
                 
                 )}
-
-               
-
-            </>
-            :
-            <></>    
-            }
+           
         </div> 
         </div>
         :

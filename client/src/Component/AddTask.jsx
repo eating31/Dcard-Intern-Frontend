@@ -1,6 +1,6 @@
 import React,{useEffect, useState, useContext} from 'react'
 import axios from 'axios';
-import { Button, Modal, Form, Spinner} from 'react-bootstrap';
+import { Button, Modal, Form, Spinner ,Row, Col,InputGroup} from 'react-bootstrap';
 import Select from 'react-select'
 import { Context } from '../Context/Context';
 
@@ -36,7 +36,7 @@ function AddTask() {
         }
     },[isAdd])
 
-    async function postData(req, res) {
+    async function postData(event) {
         const data = {
             "title":title,
             "body":content, 
@@ -47,23 +47,22 @@ function AddTask() {
                 }
               ]
         }
-        if(title){   
-            if(content.length <= 30){
-                alert('請輸入超過30字')
-            }else{
-                setLoading(true)
-                await axios.post("https://api.github.com/repos/eating31/"+selectRepo+"/issues", data,{
-                    headers:{
-                        "Authorization": "bearer " + localStorage.getItem("access_token")
-                        }
-                }).then(data =>console.log(data))
-                .catch(err => console.log(err))
-                handleClose()
-                setLoading(false)
-                setFinishModal(true)
-            }
-        }else{
-            alert('請輸入標題')
+        if((isTitleValid && isValid)){
+          if(selectRepo){
+            setLoading(true)
+            await axios.post("https://api.github.com/repos/eating31/"+selectRepo+"/issues", data,{
+              headers:{
+                "Authorization": "bearer " + localStorage.getItem("access_token")
+                }
+              }).then(data =>console.log(data))
+               .catch(err => console.log(err))
+
+            handleClose()
+            setLoading(false)
+            setFinishModal(true)
+          }else{
+            alert("請選擇資料庫")
+          }
         }
     }
 
@@ -72,9 +71,26 @@ function finishClose(){
   window.location.reload()
 }
 
+const [validated, setValidated] = useState(false);
+const [isValid, setIsValid] = useState(false);
+  const [isTitleValid, setIsTitleValid] = useState(false);
+
+
+const handleChange =(event)=>{
+  const { name, value } = event.target;
+
+  if (name === 'title') {
+    setTitle(value)
+    setIsTitleValid(value !== '');
+  } else if (name === 'body') {
+    setIsValid(value.length >= 30)
+    setContent(value)
+  }
+}
+  
   return (
     <div>
-    <Button variant="primary" onClick={() => setIsAdd(true)}>
+    <Button variant="outline-primary" onClick={() => setIsAdd(true)}>
        Add
     </Button>
     
@@ -91,12 +107,13 @@ function finishClose(){
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <Form>
+        <Form noValidate>
             <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
             <Form.Label>Repo</Form.Label>
             <Select
                 className="basic-single"
                 classNamePrefix="select"
+                name="repo"
                 defaultValue={allRepo[0]}
                 onChange={e => setSelectRepo(e.value)}
                 options={allRepo}
@@ -104,16 +121,37 @@ function finishClose(){
             </Form.Group>
             <Form.Group className="mb-3">
             <Form.Label>Title</Form.Label>
-                <Form.Control type="text" value={title} onChange={e => setTitle(e.target.value)}/>
+                <Form.Control 
+                    type="text"
+                    name="title"
+                    placeholder="title"
+                    value={title}
+                    onChange={e => handleChange(e)}
+                    isInvalid={!isTitleValid}
+                     />
+                  <Form.Control.Feedback type="invalid">
+                    請輸入標題
+                </Form.Control.Feedback>
             </Form.Group>
             <Form.Group className="mb-3">
             <Form.Label>Body</Form.Label>
-                <Form.Control as="textarea" rows={3} value={content} onChange={e => setContent(e.target.value)}/>
+                <Form.Control
+                    as="textarea"
+                    rows={3}
+                    name="body"
+                    value={content}
+                    isInvalid={!isValid}
+                    onChange={e => handleChange(e)} />
                 <Form.Text id="passwordHelpBlock" muted>
                     至少輸入30個字
                 </Form.Text>
             </Form.Group>
         </Form>
+        {/* <Form noValidate validated={validated} onSubmit={handleSubmit}>
+
+  
+      <Button type="submit">Submit form</Button>
+    </Form> */}
       </Modal.Body>
       <Modal.Footer>
             <Button variant="secondary" onClick={handleClose}>
@@ -145,6 +183,7 @@ function finishClose(){
           </Button>
         </Modal.Footer>
       </Modal>
+
     </div>
   )
 }

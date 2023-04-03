@@ -15,6 +15,7 @@ function DetailTask() {
   
   const [loading, setLoading] = useState(true);
   const [editLoading, setEditLoading] = useState(false)
+  const [stateLoading, setStateLoading] = useState(false)
   const [issues, setIssues] = useState([])
 
   const [modalShow, setModalShow] = useState(false)
@@ -36,33 +37,36 @@ useEffect(()=>{
 },[issueData])
 
 useEffect(()=>{
-  console.log(status)
-async function updateState(){
-  let s = status
-  const LabelUrl =issueData.labels[0].url
-  console.log(LabelUrl)
-  let color = '';
-  if(status === 'open'){
-    color = '6c757d'
-  }else if(status === 'In%20progress'){
-    color = 'dc3545'
-    s = 'In progress'
-  }else{
-    color='198754'
-  }
-  const data ={
-    name: s,
-    color: color,
-  }
+ 
+    async function updateState(){
+      setStateLoading(true)
+      let s = status
+      const LabelUrl =issueData.labels[0].url
+      console.log(LabelUrl)
+      let color = '';
+      if(status === 'open'){
+        color = 'ededed'
+      }else if(status === 'In%20progress'){
+        color = 'dc3545'
+        s = 'In progress'
+      }else{
+        color='198754'
+      }
+      const data ={
+        name: s,
+        color: color,
+      }
 
-  await axios.patch(LabelUrl, data ,{
-    headers:{
-          "Authorization": "bearer " + localStorage.getItem("access_token")
-    }}).then(data => console.log(data))
-    .catch(err => console.log(err))
+      await axios.patch(LabelUrl, data ,{
+        headers:{
+              "Authorization": "bearer " + localStorage.getItem("access_token")
+        }}).then(data => console.log(data))
+        .then(()=> setModalShow(true))
+        .then(()=> setStateLoading(false))
+        .then(()=> getIssue())
+        .catch(err => console.log(err))
+      }
 
-    getIssue()
-  }
   if(status){
     updateState()
   }
@@ -83,7 +87,7 @@ async function getIssue(){
   setLoading(false)
 }
 
-  async function updateData(req, res) {
+async function updateData(req, res) {
     setEditLoading(true)
     const data = {
         "title":title,
@@ -126,7 +130,6 @@ const icon = () => {
 }
 
 const handleClose = () => {
-  setModalShow(false)
   setDetailShow(false)
 };
 
@@ -136,6 +139,7 @@ const handleDeleteClose = () =>{
   setDeleteSuccessShow(false)
   window.location.reload()
 }
+
   return (
     <div className='container'> 
     <Modal show={detailShow} onHide={handleClose} animation={false} size="lg" centered>
@@ -149,16 +153,35 @@ const handleDeleteClose = () =>{
        :
         <Modal.Body className='px-5'>
         <Modal.Title className='row'>
+        
             <DropdownButton
-              className='col custom-dropdown-button'
+              id="my-dropdown-button"
+              className='col'
                 variant="white"
-                title={issueData.labels[0].name}
+                title={<span  style={{
+                            backgroundImage: `linear-gradient(transparent 30%,  #${issueData.labels[0].color} 100%)`,
+                            padding: '3px 8px',
+                            }}>
+                  
+                  {stateLoading &&
+                    <Spinner
+                        as="span"
+                        animation="border"
+                        size="sm"
+                        role="status"
+                        aria-hidden="true"
+                        />
+                    }
+                    {"  "} {issueData.labels[0].name}
+                    </span>
+                }
               >
               <Dropdown.Item eventKey="1" onClick={e => setStatus('open')} className='text-secondary'><FontAwesomeIcon icon={faSquare} size="2xs" /> open</Dropdown.Item>
               <Dropdown.Item eventKey="2" onClick={e => setStatus('In%20progress')} className='text-danger'> <FontAwesomeIcon icon={faSquare} size="2xs" /> In progress</Dropdown.Item>
               <Dropdown.Item eventKey="3" onClick={e => setStatus('Done')} className='text-success'><FontAwesomeIcon icon={faSquare} size="2xs" /> Done</Dropdown.Item>
             </DropdownButton>
             <DropdownButton
+              id="my-dropdown-button"
               className="col d-flex justify-content-end custom-dropdown-button"
               variant="white"
               title={icon()}>
@@ -225,13 +248,13 @@ const handleDeleteClose = () =>{
       </Modal>
 
     
-      <Modal show={modalShow} onHide={handleClose} animation={false} centered>
+      <Modal show={modalShow} onHide={handleDeleteClose} animation={false} centered>
         <Modal.Header closeButton>
           <Modal.Title>Updated an issue</Modal.Title>
         </Modal.Header>
         <Modal.Body>Successfully updated an issue</Modal.Body>
         <Modal.Footer>
-          <Button variant="primary" onClick={handleClose}>
+          <Button variant="primary" onClick={handleDeleteClose}>
             確定
           </Button>
         </Modal.Footer>
