@@ -25,3 +25,27 @@
 
 
 ## 設計架構
+
+### Frontend
+使用react.js搭配react-bootstrap排版，並利用axios的方式取得github api資料
+有try...catch的錯誤處理機制
+因為功能不多，故將所有需求寫在同一個頁面
+
+### Backend
+github 在取得access token時會有cors的問題，在前端嘗試許久最後決定寫個後端，並使用require(cors())的方式解決
+
+### Navbar
+可以在Navbar上選擇登出和查看個人檔案，也可以直接新增issue
+
+### SideBar
+列出所有的repo同時可以搜尋單一repo的所有issue
+
+### SearhBar
+可以根據state也可以以關鍵字搜尋issue的body和title
+
+### Detail
+點擊後即可看到issue的內容，包括創造、更新時間和對應的repo，也可在上面編輯、刪除相關內容及改變狀態
+
+### AddIssue
+有title和body防呆機制，repo的選單也可以直接輸入文字搜尋相關repo
+
