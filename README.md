@@ -12,30 +12,30 @@
 
 ### 設定專案
 1. git clone https://github.com/eating31/Intern-Frontend
-2. 進入資料夾 cd Intern-Frontend 
+2. 進入後端資料夾 cd Intern-Frontend/backend
 3. 建立.env的檔案並輸入 CLIENT_ID = "xxxxxxx", CLIENT_SECRET = "xxxxxxx"
 4. 將前階段獲得的 client_id和 secret 填入.env的檔案中
-5. 再進入前端資料夾 cd client 
+5. 再進入前端資料夾 cd ../frontend 
 6. 再次建立.env的檔案並輸入 REACT_APP_CLIENT_ID = "xxxxxxx"
 
 ### 執行專案
 1. 開啟兩個cmd
-2. cd Intern-Frontend 執行 node server.js (確定port是4000)
-3. cd Intern-Frontend/client 執行 npm start (確定port是3000)
+2. cd Intern-Frontend/backend 執行 node server.js (確定port是4000)
+3. cd Intern-Frontend/frontend 執行 npm start (確定port是3000)
 
 
 ## 設計架構
+
+### Backend
+github 在取得access token時會有cors的問題，在前端嘗試許久最後決定寫個後端，並使用require(cors())的方式解決
 
 ### Frontend
 使用react.js搭配react-bootstrap排版，並利用axios的方式取得github api資料
 有try...catch的錯誤處理機制
 因為功能不多，故將所有需求寫在同一個頁面
 
-### Backend
-github 在取得access token時會有cors的問題，在前端嘗試許久最後決定寫個後端，並使用require(cors())的方式解決
-
 ### Login
-可以選擇登入權限，只授權public repository或是 public 和 private repository
+可以選擇登入權限，自行決定只授權public repository或是授權 public 和 private repository
 
 ### Navbar
 可以在Navbar上選擇登出和查看個人檔案，也可以直接新增issue
