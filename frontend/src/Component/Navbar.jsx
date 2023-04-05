@@ -68,13 +68,13 @@ useEffect(()=>{
                   Profile
                 </NavDropdown.Item>
                 <NavDropdown.Divider />
-                <NavDropdown.Item eventKey="2" href="#link">
+                <NavDropdown.Item eventKey="2" href="/login">
                   Logout
                 </NavDropdown.Item>
               </NavDropdown>
             </>
           ) : (
-            <Nav.Link eventKey="3" href="/" >Login</Nav.Link>
+            <Nav.Link eventKey="3" href="/login" >Login</Nav.Link>
           )}
         </Nav>
       </NavbarReact.Collapse>

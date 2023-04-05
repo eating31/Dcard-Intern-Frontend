@@ -4,7 +4,7 @@ import axios from 'axios';
 
 import AddTask from './AddTask';
 import DetailTask from './DetailTask';
-import Login from './Login';
+// import Login from './Login';
 import Siders from './Siders'
 import SearchBar from './SearchBar';
 
@@ -117,6 +117,7 @@ async function getUserData(req, res) {
      })
      .then((data) => {
         setUserName(data.data)
+        console.log(data)
         localStorage.setItem("user_name",data.data.name);
         localStorage.setItem("avatar_url",data.data.avatar_url);
         localStorage.setItem("html_url",data.data.html_url);
@@ -132,6 +133,7 @@ async function Detail(e, content) {
 
 async function searchData(req, res) {
     setCarfLoading(true)
+    console.log(userName)
     // 所有資料
     try{
         await axios.get(`https://api.github.com/search/issues?q=user:${userName.login}+is:open+sort:created&per_page=10&page=${page}`,{
@@ -266,7 +268,8 @@ const isClicked = (issue) => clickedLinks.includes(issue.id)
         </div> 
         </div>
         :
-        <Login />
+        <></>
+        // <h1>尚未登入請登入</h1>
     }
 
 </div>
